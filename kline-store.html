@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sheet Music — Tyler Kline</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;1,200;1,300;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    color-scheme: light;
+    background: #fff !important;
+    color: #1A1A1A !important;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    padding: 40px 20px 80px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── LOADING / ERROR ── */
+  #loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: #999;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  #error-msg {
+    text-align: center;
+    padding: 80px 20px;
+    color: #c0392b;
+    font-size: 0.8rem;
+    font-weight: 300;
+  }
+
+  /* ════════════════════════════════
+     SHARED HEADER
+  ════════════════════════════════ */
+
+  .store-header {
+    border-bottom: 1px solid #DEDEDE;
+    padding-bottom: 28px;
+    margin-bottom: 36px;
+  }
+
+  .store-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: #1A1A1A;
+    margin-bottom: 14px;
+    display: inline-block;
+  }
+
+  .store-title.clickable {
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .store-title.clickable:hover { color: #6B8A9A; }
+
+  .store-description {
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: #777;
+    line-height: 1.7;
+    max-width: 560px;
+  }
+
+  .store-description a {
+    color: #6B8A9A;
+    text-decoration: none;
+    border-bottom: 1px solid #6B8A9A;
+    padding-bottom: 1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .store-description a:hover { color: #1A1A1A; border-color: #1A1A1A; }
+
+  /* ════════════════════════════════
+     HOME VIEW — SECTIONS
+  ════════════════════════════════ */
+
+  .home-section {
+    margin-bottom: 52px;
+  }
+
+  .home-section:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Section header row */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #DEDEDE;
+    padding-bottom: 14px;
+    margin-bottom: 28px;
+  }
+
+  .section-title {
+    font-size: clamp(1.2rem, 3vw, 1.7rem);
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #1A1A1A;
+    line-height: 1;
+  }
+
+  .section-meta {
+    font-size: 0.65rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: #aaa;
+    flex-shrink: 0;
+  }
+
+  /* View all featured link */
+  .view-all-link {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6B8A9A;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .view-all-link:hover { border-bottom-color: #6B8A9A; }
+
+  /* Browse All button — badge style */
+  .browse-all-section {
+    margin-bottom: 0;
+  }
+
+  .browse-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: 1px solid #6B8A9A;
+    border-radius: 3px;
+    padding: 10px 22px;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #6B8A9A;
+    transition: background 0.18s, color 0.18s;
+    margin-top: 28px;
+  }
+
+  .browse-all-btn:hover {
+    background: #6B8A9A;
+    color: #fff;
+  }
+
+  .browse-all-btn svg {
+    width: 11px; height: 11px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* ════════════════════════════════
+     FULL CATALOG VIEW
+  ════════════════════════════════ */
+
+  .toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .filters-wrap {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .filter-group { position: relative; }
+
+  .filter-group-label {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 5px;
+  }
+
+  .filter-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #DEDEDE;
+    border-radius: 2px;
+    padding: 7px 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: #444;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    white-space: nowrap;
+    min-width: 150px;
+    justify-content: space-between;
+  }
+
+  .filter-trigger:hover { border-color: #6B8A9A; }
+
+  .filter-trigger.has-selection {
+    border-color: #6B8A9A;
+    color: #6B8A9A;
+  }
+
+  .filter-trigger svg {
+    width: 8px; height: 8px;
+    fill: currentColor;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+
+  .filter-trigger.open svg { transform: rotate(180deg); }
+
+  .filter-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: #fff;
+    border: 1px solid #DEDEDE;
+    border-radius: 2px;
+    min-width: 190px;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    padding: 8px 0;
+  }
+
+  .filter-dropdown.open { display: block; }
+
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .filter-option:hover { background: #F0F5F7; }
+
+  .filter-option input[type="checkbox"] {
+    width: 13px; height: 13px;
+    accent-color: #6B8A9A;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .filter-option-label {
+    font-size: 0.72rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    color: #444;
+    text-transform: capitalize;
+    cursor: pointer;
+    flex: 1;
+  }
+
+  .filter-clear {
+    display: block;
+    padding: 6px 14px;
+    font-size: 0.62rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #aaa;
+    cursor: pointer;
+    border-top: 1px solid #f5f5f5;
+    margin-top: 4px;
+    transition: color 0.12s;
+  }
+
+  .filter-clear:hover { color: #6B8A9A; }
+
+  .count-label {
+    font-size: 0.65rem;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    color: #aaa;
+    padding-top: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ════════════════════════════════
+     SHARED GRID + CARDS
+  ════════════════════════════════ */
+
+  .scores-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px 20px;
+  }
+
+  @media (max-width: 680px) {
+    .scores-grid { grid-template-columns: repeat(2, 1fr); gap: 24px 14px; }
+  }
+
+  .score-card {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .score-card.hidden { display: none; }
+  .score-card:hover .card-cover { border-color: #6B8A9A; }
+  .score-card:hover .card-title { color: #6B8A9A; }
+
+  .card-cover {
+    width: 100%;
+    border: 1px solid #DEDEDE;
+    margin-bottom: 12px;
+    transition: border-color 0.18s;
+    overflow: hidden;
+    background: #F0F5F7;
+    position: relative;
+  }
+
+  .card-cover img { width: 100%; display: block; }
+
+  .card-cover-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 16px;
+  }
+
+  .placeholder-title {
+    font-size: clamp(0.65rem, 2vw, 0.9rem);
+    font-weight: 200;
+    letter-spacing: 0.18em;
+    color: #bbb;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .placeholder-subtitle {
+    font-size: 0.56rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #ccc;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 20px; height: 20px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #DEDEDE;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    color: #6B8A9A;
+    line-height: 1;
+  }
+
+  .coming-soon-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #DEDEDE;
+    border-radius: 2px;
+    padding: 3px 7px;
+    font-size: 0.52rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #aaa;
+  }
+
+  .card-info { flex: 1; display: flex; flex-direction: column; }
+
+  .card-title {
+    font-size: 0.88rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: #1A1A1A;
+    margin-bottom: 2px;
+    transition: color 0.18s;
+    line-height: 1.3;
+  }
+
+  .card-subtitle {
+    font-size: 0.72rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #777;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .card-instrumentation {
+    font-size: 0.68rem;
+    font-weight: 300;
+    color: #666;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+    flex: 1; min-width: 0;
+  }
+
+  .card-price {
+    font-size: 0.88rem;
+    font-weight: 300;
+    color: #1A1A1A;
+    flex-shrink: 0;
+  }
+
+  .card-price.unavailable {
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #bbb;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #aaa;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* ════════════════════════════════
+     DETAIL VIEW
+  ════════════════════════════════ */
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #999;
+    padding: 0;
+    margin-bottom: 28px;
+    transition: color 0.15s;
+  }
+
+  .back-btn:hover { color: #6B8A9A; }
+
+  .back-btn svg {
+    width: 10px; height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .score-header {
+    border-bottom: 1px solid #DEDEDE;
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+
+  .score-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 200;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: #1A1A1A;
+  }
+
+  .score-subtitle {
+    font-size: 1rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #777;
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .score-body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 52px;
+    align-items: start;
+  }
+
+  @media (max-width: 680px) {
+    .score-body { grid-template-columns: 1fr; gap: 40px; }
+    .score-sidebar { order: -1; }
+  }
+
+  .section-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #6B8A9A;
+    margin-bottom: 12px;
+  }
+
+  .primary-media { margin-bottom: 24px; }
+
+  .video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    background: #F0F5F7;
+  }
+
+  .video-wrapper iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+
+  .sc-wrapper iframe { width: 100%; height: 166px; border: none; }
+  .audio-wrapper audio { width: 100%; margin-top: 4px; }
+
+  .notes-premiere-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-top: 1px solid #DEDEDE;
+    border-bottom: 1px solid #DEDEDE;
+    margin-bottom: 24px;
+  }
+
+  .notes-only-row {
+    padding: 16px 0;
+    border-top: 1px solid #DEDEDE;
+    border-bottom: 1px solid #DEDEDE;
+    margin-bottom: 24px;
+  }
+
+  .notes-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid #6B8A9A;
+    border-radius: 3px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #6B8A9A;
+    transition: background 0.18s, color 0.18s;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+
+  .notes-trigger:hover { background: #6B8A9A; color: #fff; }
+  .notes-trigger:hover svg { fill: #fff; }
+
+  .notes-trigger svg {
+    width: 12px; height: 12px;
+    flex-shrink: 0;
+    fill: #6B8A9A;
+    transition: fill 0.18s;
+  }
+
+  .premiere-inline { text-align: right; flex: 1; min-width: 0; }
+
+  .premiere-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #777;
+    margin-bottom: 5px;
+  }
+
+  .premiere-value {
+    font-size: 0.84rem;
+    font-weight: 300;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .score-dedication {
+    font-size: 0.86rem;
+    font-style: italic;
+    color: #777;
+    margin-bottom: 28px;
+    line-height: 1.75;
+    padding-left: 14px;
+    border-left: 2px solid #DEDEDE;
+  }
+
+  .previews-section { margin-bottom: 32px; }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+  }
+
+  .preview-grid img {
+    width: 100%;
+    display: block;
+    border: 1px solid #DEDEDE;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .preview-grid img:hover { border-color: #6B8A9A; }
+  .preview-grid.portrait img { aspect-ratio: 8.5/11; object-fit: cover; }
+  .preview-grid.landscape img { aspect-ratio: 11/8.5; object-fit: cover; }
+  .preview-grid.large img { aspect-ratio: 1/1.4; object-fit: cover; }
+
+  .additional-media-item { margin-bottom: 16px; }
+  .additional-media-item:last-child { margin-bottom: 0; }
+
+  .score-sidebar { position: sticky; top: 20px; }
+
+  .cover-img {
+    width: 100%;
+    display: block;
+    border: 1px solid #DEDEDE;
+  }
+
+  .purchase-block {
+    padding-top: 20px;
+    border-top: 1px solid #DEDEDE;
+    margin-top: 20px;
+  }
+
+  .purchase-block.no-cover { margin-top: 0; border-top: none; }
+
+  .purchase-price {
+    font-size: 2rem;
+    font-weight: 200;
+    letter-spacing: 0.04em;
+    color: #1A1A1A;
+    margin-bottom: 10px;
+    text-align: right;
+    line-height: 1;
+  }
+
+  .file-description {
+    font-size: 0.84rem;
+    font-weight: 300;
+    color: #555;
+    line-height: 2;
+    margin-bottom: 16px;
+    text-align: right;
+  }
+
+  .btn-purchase {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background: #1A1A1A;
+    color: #fff;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .btn-purchase:hover { background: #6B8A9A; }
+
+  .btn-purchase.coming-soon {
+    background: #DEDEDE;
+    color: #aaa;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .purchase-note {
+    font-size: 0.76rem;
+    font-weight: 300;
+    color: #777;
+    text-align: center;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .engraving-note {
+    font-size: 0.76rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #777;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+
+  .engraving-note::before {
+    content: '✓';
+    color: #6B8A9A;
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  .spec-block {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #DEDEDE;
+  }
+
+  .spec-item { margin-bottom: 16px; }
+  .spec-item:last-child { margin-bottom: 0; }
+
+  .spec-label {
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #777;
+    margin-bottom: 3px;
+    text-align: right;
+  }
+
+  .spec-value {
+    font-size: 0.88rem;
+    font-weight: 300;
+    color: #444;
+    line-height: 1.5;
+    text-align: right;
+  }
+
+  .spec-note {
+    font-size: 0.78rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #777;
+    line-height: 1.5;
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  /* ════════════════════════════════
+     MODAL
+  ════════════════════════════════ */
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,26,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #fff;
+    width: 100%;
+    max-width: 860px;
+    max-height: 84vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    padding: 22px 32px 18px;
+    border-bottom: 1px solid #DEDEDE;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 20px;
+  }
+
+  .modal-title {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #6B8A9A;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #aaa;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .modal-close:hover { color: #1A1A1A; }
+
+  .modal-body {
+    overflow-y: auto;
+    padding: 32px 32px 40px;
+    flex: 1;
+  }
+
+  .modal-body::-webkit-scrollbar { width: 4px; }
+  .modal-body::-webkit-scrollbar-track { background: #f5f5f5; }
+  .modal-body::-webkit-scrollbar-thumb { background: #DEDEDE; }
+  .modal-body::-webkit-scrollbar-thumb:hover { background: #6B8A9A; }
+
+  .program-notes {
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.9;
+    color: #444;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .program-notes p { margin-bottom: 1.3em; }
+  .program-notes p:last-child { margin-bottom: 0; }
+  .program-notes em { font-style: italic; }
+  .program-notes strong { font-weight: 500; color: #1A1A1A; }
+  .program-notes strong em, .program-notes em strong {
+    font-style: italic; font-weight: 500; color: #1A1A1A;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">Loading</div>
+<div id="error-msg" style="display:none"></div>
+
+<!-- ════════════════════════════════
+     HOME VIEW
+════════════════════════════════ -->
+<div id="home-view" style="display:none">
+
+  <div class="store-header">
+    <div class="store-title">Sheet Music</div>
+    <div class="store-description">
+      Sheet music is available via digital download only. To order physical copies of any score, please <a href="mailto:tylerklinemusic@gmail.com">contact the composer</a>.
+    </div>
+  </div>
+
+  <!-- PERMANENT TOOLBAR -->
+  <div class="toolbar" id="home-toolbar">
+    <div class="filters-wrap">
+
+      <div class="filter-group" id="hfg-ensemble">
+        <div class="filter-group-label">Ensemble Type</div>
+        <button class="filter-trigger" id="hft-ensemble" onclick="toggleHomeDropdown('ensemble')">
+          <span id="hft-ensemble-label">All</span>
+          <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+        </button>
+        <div class="filter-dropdown" id="hfd-ensemble"></div>
+      </div>
+
+      <div class="filter-group" id="hfg-instrument">
+        <div class="filter-group-label">Instrument</div>
+        <button class="filter-trigger" id="hft-instrument" onclick="toggleHomeDropdown('instrument')">
+          <span id="hft-instrument-label">All</span>
+          <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+        </button>
+        <div class="filter-dropdown" id="hfd-instrument"></div>
+      </div>
+
+    </div>
+    <button class="browse-all-btn" style="margin-top:0" onclick="showCatalog('all')">
+      <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1.5" width="10" height="1.2" rx="0.6"/>
+        <rect x="1" y="5.4" width="7" height="1.2" rx="0.6"/>
+        <rect x="1" y="9.3" width="8.5" height="1.2" rx="0.6"/>
+      </svg>
+      Browse All Scores
+    </button>
+  </div>
+
+  <!-- FEATURED -->
+  <div class="home-section" id="section-featured">
+    <div class="section-header">
+      <div class="section-title">Featured</div>
+      <span class="view-all-link" id="featured-view-all" onclick="showCatalog('featured')" style="display:none">View all featured →</span>
+    </div>
+    <div class="scores-grid" id="grid-featured"></div>
+  </div>
+
+  <!-- LATEST -->
+  <div class="home-section" id="section-latest">
+    <div class="section-header">
+      <div class="section-title">Latest</div>
+      <span class="section-meta" id="latest-meta"></span>
+    </div>
+    <div class="scores-grid" id="grid-latest"></div>
+  </div>
+
+  <!-- BROWSE ALL -->
+  <div class="home-section browse-all-section" id="section-browse">
+    <div class="section-header">
+      <div class="section-title">Browse All</div>
+      <span class="section-meta" id="browse-meta"></span>
+    </div>
+    <div class="scores-grid" id="grid-browse"></div>
+    <button class="browse-all-btn" onclick="showCatalog('all')">
+      <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1.5" width="10" height="1.2" rx="0.6"/>
+        <rect x="1" y="5.4" width="7" height="1.2" rx="0.6"/>
+        <rect x="1" y="9.3" width="8.5" height="1.2" rx="0.6"/>
+      </svg>
+      Browse All Scores
+    </button>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════
+     FULL CATALOG VIEW
+════════════════════════════════ -->
+<div id="catalog-view" style="display:none">
+
+  <div class="store-header">
+    <div class="store-title clickable" onclick="showHome()" title="Back to home">Sheet Music</div>
+    <div class="store-description">
+      Sheet music is available via digital download only. To order physical copies of any score, please <a href="mailto:tylerklinemusic@gmail.com">contact the composer</a>.
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters-wrap">
+
+      <div class="filter-group" id="fg-ensemble">
+        <div class="filter-group-label">Ensemble Type</div>
+        <button class="filter-trigger" id="ft-ensemble" onclick="toggleDropdown('ensemble')">
+          <span id="ft-ensemble-label">All</span>
+          <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+        </button>
+        <div class="filter-dropdown" id="fd-ensemble"></div>
+      </div>
+
+      <div class="filter-group" id="fg-instrument">
+        <div class="filter-group-label">Instrument</div>
+        <button class="filter-trigger" id="ft-instrument" onclick="toggleDropdown('instrument')">
+          <span id="ft-instrument-label">All</span>
+          <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z"/></svg>
+        </button>
+        <div class="filter-dropdown" id="fd-instrument"></div>
+      </div>
+
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; padding-top:22px;">
+      <button class="browse-all-btn" style="margin-top:0" onclick="showHome()">
+        <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(180deg)"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Storefront Home
+      </button>
+      <div class="count-label" id="count-label">— scores</div>
+    </div>
+  </div>
+
+  <div class="scores-grid" id="scores-grid"></div>
+
+</div>
+
+<!-- ════════════════════════════════
+     DETAIL VIEW
+════════════════════════════════ -->
+<div id="detail-view" style="display:none">
+  <div style="margin-bottom:28px;">
+    <button class="browse-all-btn" style="margin-top:0" id="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(180deg)"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="back-label">All Scores</span>
+    </button>
+  </div>
+  <div id="detail-content"></div>
+</div>
+
+<!-- ════════════════════════════════
+     PROGRAM NOTES MODAL
+════════════════════════════════ -->
+<div class="modal-overlay" id="notesModal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Program Notes</span>
+      <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="program-notes" id="modal-notes"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1BKBjoczBkt8uX2Xc___e_ZFErJyj1fyj_X7VioIz3aY';
+const SHEET_NAME = 'Sheet1';
+
+let allScores = [];
+let selectedEnsemble = new Set();
+let selectedInstruments = new Set();
+let previousView = 'home'; // track where to go back to from detail
+
+// ── DATA ──────────────────────────────────────
+
+async function fetchData() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+  const cols = json.table.cols.map(c => c.label);
+  return json.table.rows.map(row => {
+    const obj = {};
+    cols.forEach((col, i) => {
+      const cell = row.c[i];
+      if (!cell || cell.v === null || cell.v === undefined) {
+        obj[col] = '';
+      } else if (typeof cell.v === 'boolean') {
+        obj[col] = cell.v ? 'TRUE' : 'FALSE';
+      } else {
+        obj[col] = String(cell.v).trim();
+      }
+    });
+    return obj;
+  }).filter(r => r.Title && r.ShowInStore === 'TRUE');
+}
+
+// ── HELPERS ──────────────────────────────────
+
+function parseList(val) {
+  if (!val) return [];
+  return val.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+function cleanText(s) {
+  return s ? s.replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim() : '';
+}
+
+function parseMarkdown(text) {
+  if (!text) return '';
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  text = text.replace(/\*\*\*(.+?)\*\*\*/gs, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>');
+  text = text.replace(/\*(.+?)\*/gs, '<em>$1</em>');
+  return text;
+}
+
+function textToHTML(text) {
+  if (!text) return '';
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  return paras.map(p => {
+    const lines = p.split(/\n/).map(l => parseMarkdown(l.trim())).join('<br>');
+    return `<p>${lines}</p>`;
+  }).join('');
+}
+
+function parsePremiereInfo(val) {
+  if (!val) return null;
+  if (val.includes('|')) return val.split('|').map(s => s.trim()).filter(Boolean);
+  return [val];
+}
+
+function parsePrice(val) {
+  if (!val) return null;
+  const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function formatPrice(n) {
+  return '$' + (Number.isInteger(n) ? n : n.toFixed(2));
+}
+
+function toYouTubeEmbed(url) {
+  if (!url) return null;
+  url = url.trim();
+  if (url.includes('youtube.com/embed/')) return url;
+  let m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  return null;
+}
+
+function toSoundCloudEmbed(url) {
+  if (!url) return null;
+  if (url.includes('soundcloud.com'))
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%236B8A9A&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false`;
+  return null;
+}
+
+function mediaEmbed(url) {
+  if (!url) return null;
+  url = url.trim();
+  const yt = toYouTubeEmbed(url);
+  if (yt) return `<div class="video-wrapper"><iframe src="${yt}" allowfullscreen loading="lazy"></iframe></div>`;
+  const sc = toSoundCloudEmbed(url);
+  if (sc) return `<div class="sc-wrapper"><iframe src="${sc}" scrolling="no" allow="autoplay"></iframe></div>`;
+  if (url.match(/\.(mp3|wav|ogg|aac|m4a)(\?|$)/i))
+    return `<div class="audio-wrapper"><audio controls src="${url}"></audio></div>`;
+  return null;
+}
+
+function previewClass(format) {
+  if (!format) return 'portrait';
+  const f = format.toLowerCase();
+  if (f === 'landscape') return 'landscape';
+  if (f === 'large') return 'large';
+  return 'portrait';
+}
+
+// ── CARD BUILDER ─────────────────────────────
+
+function buildCard(score, onclick) {
+  const price = parsePrice(score.Price);
+  const hasProduct = score.WixProductID && score.WixProductID.length > 5;
+  const isFeatured = score.Featured === 'TRUE';
+  const isComingSoon = !hasProduct;
+
+  const card = document.createElement('div');
+  card.className = 'score-card';
+  card.dataset.ensemble = (score.EnsembleType || '').toLowerCase();
+  card.dataset.instruments = (score.Instruments || '').toLowerCase();
+  card.onclick = onclick;
+
+  const coverHTML = score.CoverImage
+    ? `<img src="${score.CoverImage}" alt="${score.Title} cover" loading="lazy">`
+    : `<div class="card-cover-placeholder">
+        <div class="placeholder-title">${score.Title}</div>
+        ${score.Subtitle ? `<div class="placeholder-subtitle">${score.Subtitle}</div>` : ''}
+      </div>`;
+
+  card.innerHTML = `
+    <div class="card-cover">
+      ${coverHTML}
+      ${isFeatured ? '<div class="featured-badge">★</div>' : ''}
+      ${isComingSoon ? '<div class="coming-soon-badge">Coming Soon</div>' : ''}
+    </div>
+    <div class="card-info">
+      <div class="card-title">${score.Title}</div>
+      ${score.Subtitle ? `<div class="card-subtitle">${score.Subtitle}</div>` : ''}
+      <div class="card-meta">
+        <div class="card-instrumentation">${score.Instrumentation || ''}</div>
+        ${price !== null
+          ? `<div class="card-price">${formatPrice(price)}</div>`
+          : `<div class="card-price unavailable">Coming Soon</div>`}
+      </div>
+    </div>`;
+
+  return card;
+}
+
+// ── HOME VIEW RENDER ─────────────────────────
+
+function renderHome() {
+  // Sort all by DateAdded desc
+  const byDate = [...allScores].sort((a, b) => {
+    const aD = a.DateAdded ? new Date(a.DateAdded) : new Date(0);
+    const bD = b.DateAdded ? new Date(b.DateAdded) : new Date(0);
+    return bD - aD;
+  });
+
+  const featured = byDate.filter(s => s.Featured === 'TRUE');
+  const shownTitles = new Set();
+
+  // FEATURED — up to 4, show "view all" if more
+  const featuredGrid = document.getElementById('grid-featured');
+  featuredGrid.innerHTML = '';
+  featured.slice(0, 4).forEach(s => {
+    shownTitles.add(s.Title);
+    featuredGrid.appendChild(buildCard(s, () => showDetail(s.Title, 'home')));
+  });
+
+  // Show/hide section and "view all" link
+  document.getElementById('section-featured').style.display = featured.length ? 'block' : 'none';
+  const viewAll = document.getElementById('featured-view-all');
+  if (featured.length > 4) {
+    viewAll.style.display = 'inline';
+    viewAll.textContent = `View all ${featured.length} featured →`;
+  } else {
+    viewAll.style.display = 'none';
+  }
+
+  // LATEST — up to 4, excluding already shown
+  const latestGrid = document.getElementById('grid-latest');
+  latestGrid.innerHTML = '';
+  const latest = byDate.filter(s => !shownTitles.has(s.Title)).slice(0, 4);
+  latest.forEach(s => {
+    shownTitles.add(s.Title);
+    latestGrid.appendChild(buildCard(s, () => showDetail(s.Title, 'home')));
+  });
+
+  document.getElementById('section-latest').style.display = latest.length ? 'block' : 'none';
+  document.getElementById('latest-meta').textContent =
+    latest.length === 1 ? '1 score' : `${latest.length} scores`;
+
+  // BROWSE ALL PREVIEW — up to 4, alphabetical, excluding already shown
+  const browseGrid = document.getElementById('grid-browse');
+  browseGrid.innerHTML = '';
+  const remaining = [...allScores]
+    .filter(s => !shownTitles.has(s.Title))
+    .sort((a, b) => a.Title.localeCompare(b.Title))
+    .slice(0, 4);
+
+  remaining.forEach(s => {
+    browseGrid.appendChild(buildCard(s, () => showDetail(s.Title, 'home')));
+  });
+
+  const totalRemaining = allScores.length - shownTitles.size;
+  document.getElementById('section-browse').style.display =
+    (remaining.length || totalRemaining > 0) ? 'block' : 'none';
+  document.getElementById('browse-meta').textContent =
+    totalRemaining > 0 ? `${allScores.length} total` : '';
+}
+
+// ── FULL CATALOG RENDER ──────────────────────
+
+function renderCatalog() {
+  const byDate = [...allScores].sort((a, b) => {
+    const aF = a.Featured === 'TRUE' ? 0 : 1;
+    const bF = b.Featured === 'TRUE' ? 0 : 1;
+    if (aF !== bF) return aF - bF;
+    const aD = a.DateAdded ? new Date(a.DateAdded) : new Date(0);
+    const bD = b.DateAdded ? new Date(b.DateAdded) : new Date(0);
+    return bD - aD;
+  });
+
+  const grid = document.getElementById('scores-grid');
+  grid.innerHTML = '';
+  byDate.forEach(score => {
+    grid.appendChild(buildCard(score, () => showDetail(score.Title, 'catalog')));
+  });
+
+  document.getElementById('count-label').textContent =
+    allScores.length === 1 ? '1 score' : `${allScores.length} scores`;
+}
+
+// ── FILTER DROPDOWNS ─────────────────────────
+
+function buildHomeFilterOptions() {
+  const ensembleSet = new Set();
+  const instrumentSet = new Set();
+  allScores.forEach(s => {
+    parseList(s.EnsembleType).forEach(v => ensembleSet.add(v));
+    parseList(s.Instruments).forEach(v => instrumentSet.add(v));
+  });
+  buildHomeDropdown('ensemble', [...ensembleSet].sort());
+  buildHomeDropdown('instrument', [...instrumentSet].sort());
+}
+
+function buildHomeDropdown(type, options) {
+  const el = document.getElementById(`hfd-${type}`);
+  el.innerHTML = options.map(opt => `<label class="filter-option"><input type="checkbox" value="${opt}" onchange="onHomeFilterChange('${type}', '${opt}', this.checked)"><span class="filter-option-label">${opt}</span></label>`).join("") + `<span class="filter-clear" onclick="clearHomeFilter('${type}')" >Clear</span>`;
+}
+
+function toggleHomeDropdown(type) {
+  const trigger = document.getElementById(`hft-${type}`);
+  const dropdown = document.getElementById(`hfd-${type}`);
+  const isOpen = dropdown.classList.contains('open');
+  document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.filter-trigger').forEach(t => t.classList.remove('open'));
+  if (!isOpen) { dropdown.classList.add('open'); trigger.classList.add('open'); }
+}
+
+function onHomeFilterChange(type, value, checked) {
+  const set = type === 'ensemble' ? selectedEnsemble : selectedInstruments;
+  checked ? set.add(value) : set.delete(value);
+  const catalogCb = document.querySelector(`#fd-${type} input[value="${value}"]`);
+  if (catalogCb) catalogCb.checked = checked;
+  updateTriggerLabel(type);
+  showCatalog('filter');
+}
+
+function clearHomeFilter(type) {
+  const set = type === 'ensemble' ? selectedEnsemble : selectedInstruments;
+  set.clear();
+  document.querySelectorAll(`#hfd-${type} input`).forEach(cb => cb.checked = false);
+  document.querySelectorAll(`#fd-${type} input`).forEach(cb => cb.checked = false);
+  updateTriggerLabel(type);
+}
+
+
+function buildFilterOptions() {
+  const ensembleSet = new Set();
+  const instrumentSet = new Set();
+  allScores.forEach(s => {
+    parseList(s.EnsembleType).forEach(v => ensembleSet.add(v));
+    parseList(s.Instruments).forEach(v => instrumentSet.add(v));
+  });
+  buildDropdown('ensemble', [...ensembleSet].sort());
+  buildDropdown('instrument', [...instrumentSet].sort());
+}
+
+function buildDropdown(type, options) {
+  const el = document.getElementById(`fd-${type}`);
+  el.innerHTML = options.map(opt => `
+    <label class="filter-option">
+      <input type="checkbox" value="${opt}" onchange="onFilterChange('${type}', '${opt}', this.checked)">
+      <span class="filter-option-label">${opt}</span>
+    </label>
+  `).join('') + `<span class="filter-clear" onclick="clearFilter('${type}')">Clear</span>`;
+}
+
+function toggleDropdown(type) {
+  const trigger = document.getElementById(`ft-${type}`);
+  const dropdown = document.getElementById(`fd-${type}`);
+  const isOpen = dropdown.classList.contains('open');
+  document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.filter-trigger').forEach(t => t.classList.remove('open'));
+  if (!isOpen) {
+    dropdown.classList.add('open');
+    trigger.classList.add('open');
+  }
+}
+
+function onFilterChange(type, value, checked) {
+  const set = type === 'ensemble' ? selectedEnsemble : selectedInstruments;
+  checked ? set.add(value) : set.delete(value);
+  updateTriggerLabel(type);
+  applyFilters();
+}
+
+function clearFilter(type) {
+  const set = type === 'ensemble' ? selectedEnsemble : selectedInstruments;
+  set.clear();
+  document.querySelectorAll(`#fd-${type} input`).forEach(cb => cb.checked = false);
+  updateTriggerLabel(type);
+  applyFilters();
+}
+
+function updateTriggerLabel(type) {
+  const set = type === 'ensemble' ? selectedEnsemble : selectedInstruments;
+  const label = document.getElementById(`ft-${type}-label`);
+  const trigger = document.getElementById(`ft-${type}`);
+  if (set.size === 0) {
+    label.textContent = 'All';
+    trigger.classList.remove('has-selection');
+  } else if (set.size === 1) {
+    label.textContent = [...set][0];
+    trigger.classList.add('has-selection');
+  } else {
+    label.textContent = `${set.size} selected`;
+    trigger.classList.add('has-selection');
+  }
+}
+
+function applyFilters() {
+  const cards = document.querySelectorAll('#scores-grid .score-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const ensembleTags = parseList(card.dataset.ensemble);
+    const instrumentTags = parseList(card.dataset.instruments);
+    const ensembleMatch = selectedEnsemble.size === 0 ||
+      [...selectedEnsemble].some(v => ensembleTags.includes(v));
+    const instrumentMatch = selectedInstruments.size === 0 ||
+      [...selectedInstruments].some(v => instrumentTags.includes(v));
+    const show = ensembleMatch && instrumentMatch;
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+
+  document.getElementById('count-label').textContent =
+    visible === 1 ? '1 score' : `${visible} scores`;
+
+  let empty = document.getElementById('empty-state');
+  if (visible === 0) {
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = 'empty-state';
+      empty.className = 'empty-state';
+      empty.textContent = 'No scores match the selected filters.';
+      document.getElementById('scores-grid').appendChild(empty);
+    }
+  } else if (empty) {
+    empty.remove();
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.filter-group')) {
+    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.filter-trigger').forEach(t => t.classList.remove('open'));
+  }
+});
+
+// ── NAVIGATION ───────────────────────────────
+
+function hideAll() {
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('catalog-view').style.display = 'none';
+  document.getElementById('detail-view').style.display = 'none';
+}
+
+function showHome() {
+  hideAll();
+  document.getElementById('home-view').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showCatalog(context) {
+  // If triggered by a filter interaction, filters persist
+  // If triggered by "Browse All" or "View all featured", reset filters first
+  if (context !== 'filter') {
+    selectedEnsemble.clear();
+    selectedInstruments.clear();
+    document.querySelectorAll('.filter-dropdown input').forEach(cb => cb.checked = false);
+    updateTriggerLabel('ensemble');
+    updateTriggerLabel('instrument');
+    applyFilters();
+  }
+  hideAll();
+  renderCatalog();
+  document.getElementById('catalog-view').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showDetail(title, from) {
+  const score = allScores.find(s => s.Title === title);
+  if (!score) return;
+  previousView = from || 'home';
+  renderDetail(score);
+
+  // Update back button label
+  document.getElementById('back-label').textContent =
+    previousView === 'catalog' ? 'All Scores' : 'Storefront Home';
+
+  hideAll();
+  document.getElementById('detail-view').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goBack() {
+  if (previousView === 'catalog') {
+    showCatalog('filter'); // preserve any active filters
+  } else {
+    showHome();
+  }
+}
+
+// ── DETAIL RENDER ────────────────────────────
+
+function renderDetail(score) {
+  const price = parsePrice(score.Price);
+  const premiere = parsePremiereInfo(cleanText(score.PremiereInfo));
+  const dedication = cleanText(score.CommissionAndDedicationNote);
+  const previews = (score.PreviewImages || '').split(',').map(s => s.trim()).filter(Boolean);
+  const additionalMedia = (score.AdditionalMedia || '').split(',').map(s => s.trim()).filter(Boolean);
+  const primaryMediaURL = (score.PrimaryMedia || '').trim();
+  const fileItems = score.FileDescription
+    ? score.FileDescription.split('·').map(s => s.trim()).filter(Boolean) : [];
+  const hasProduct = score.WixProductID && score.WixProductID.length > 5;
+  const hasProgramNotes = cleanText(score.ProgramNotes).length > 0;
+  const format = (score.ScoreFormat || '').trim();
+
+  let html = `
+    <div class="score-header">
+      <div class="score-title">${score.Title}</div>
+      ${score.Subtitle ? `<div class="score-subtitle">${score.Subtitle}</div>` : ''}
+    </div>
+    <div class="score-body">
+    <div class="score-main">`;
+
+  if (primaryMediaURL) {
+    const embed = mediaEmbed(primaryMediaURL);
+    if (embed) html += `<div class="primary-media"><div class="section-label">Listen</div>${embed}</div>`;
+  }
+
+  if (hasProgramNotes || premiere) {
+    if (hasProgramNotes && premiere) {
+      html += `<div class="notes-premiere-row">
+        <button class="notes-trigger" onclick="openModal()">
+          <svg viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="1.2" rx="0.6"/><rect x="1" y="5.4" width="7" height="1.2" rx="0.6"/><rect x="1" y="8.8" width="8.5" height="1.2" rx="0.6"/></svg>
+          Program Notes
+        </button>
+        <div class="premiere-inline">
+          <div class="premiere-label">Premiere</div>
+          <div class="premiere-value">${premiere.join('<br>')}</div>
+        </div>
+      </div>`;
+    } else if (hasProgramNotes) {
+      html += `<div class="notes-only-row">
+        <button class="notes-trigger" onclick="openModal()">
+          <svg viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="1.2" rx="0.6"/><rect x="1" y="5.4" width="7" height="1.2" rx="0.6"/><rect x="1" y="8.8" width="8.5" height="1.2" rx="0.6"/></svg>
+          Program Notes
+        </button>
+      </div>`;
+    } else {
+      html += `<div class="notes-premiere-row" style="justify-content:flex-end;">
+        <div class="premiere-inline">
+          <div class="premiere-label">Premiere</div>
+          <div class="premiere-value">${premiere.join('<br>')}</div>
+        </div>
+      </div>`;
+    }
+  }
+
+  if (dedication) html += `<div class="score-dedication">${parseMarkdown(dedication)}</div>`;
+
+  if (previews.length) {
+    html += `<div class="previews-section">
+      <div class="section-label">Score Preview</div>
+      <div class="preview-grid ${previewClass(format)}">
+        ${previews.map(src => `<img src="${src}" alt="Score preview" loading="lazy">`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (additionalMedia.length) {
+    html += `<div class="additional-media-section"><div class="section-label">Additional Media</div>`;
+    additionalMedia.forEach(url => {
+      const embed = mediaEmbed(url);
+      if (embed) html += `<div class="additional-media-item">${embed}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div><div class="score-sidebar">`;
+
+  if (score.CoverImage) html += `<img class="cover-img" src="${score.CoverImage}" alt="${score.Title} cover">`;
+
+  html += `<div class="purchase-block${!score.CoverImage ? ' no-cover' : ''}">`;
+  if (price !== null) html += `<div class="purchase-price">${formatPrice(price)}</div>`;
+  if (fileItems.length) {
+    html += `<div class="file-description">${fileItems.map(i => `<div>${i}</div>`).join('')}</div>`;
+  }
+  html += hasProduct
+    ? `<button class="btn-purchase" onclick="handlePurchase('${score.WixProductID}')">Add to Cart</button>`
+    : `<button class="btn-purchase coming-soon">Coming Soon</button>`;
+  html += `<div class="purchase-note">Secure checkout via Wix</div>
+    <div class="engraving-note">All sheet music professionally engraved and typeset</div>
+  </div>`;
+
+  const specs = [
+    score.Year && { label: 'Year', value: score.Year },
+    score.Instrumentation && { label: 'Instrumentation', value: score.Instrumentation },
+    score.Duration && { label: 'Duration', value: score.Duration },
+    score.Pages && { label: 'Pages', value: score.Pages },
+    score.Difficulty && { label: 'Difficulty', value: score.Difficulty, note: score.DifficultyNote || '' },
+  ].filter(Boolean);
+
+  if (specs.length) {
+    html += `<div class="spec-block">`;
+    specs.forEach(s => {
+      html += `<div class="spec-item">
+        <div class="spec-label">${s.label}</div>
+        <div class="spec-value">${s.value}</div>
+        ${s.note ? `<div class="spec-note">${s.note}</div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div></div>`;
+
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('modal-title').textContent = `Program Notes — ${score.Title}`;
+  document.getElementById('modal-notes').innerHTML = hasProgramNotes
+    ? textToHTML(cleanText(score.ProgramNotes)) : '';
+}
+
+// ── MODAL ────────────────────────────────────
+
+function openModal() {
+  document.getElementById('notesModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('notesModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('notesModal')) closeModal();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+function handlePurchase(productId) {
+  window.parent.postMessage({ type: 'addToCart', productId }, '*');
+}
+
+// ── INIT ─────────────────────────────────────
+
+async function init() {
+  try {
+    allScores = await fetchData();
+    if (!allScores.length) throw new Error('No store products found.');
+    buildFilterOptions();
+    buildHomeFilterOptions();
+    renderHome();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('home-view').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'block';
+    document.getElementById('error-msg').textContent = 'Unable to load scores. ' + e.message;
+    console.error(e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
