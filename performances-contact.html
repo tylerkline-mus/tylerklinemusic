@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Notification — Tyler Kline</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #1a1a1a;
+    --grey-dark: #444;
+    --grey-mid: #777;
+    --grey-light: #999;
+    --grey-rule: #dedede;
+    --accent: #6B8A9A;
+    --accent-light: #f0f5f7;
+    --white: #ffffff;
+    --font: 'Jost', 'Futura', sans-serif;
+  }
+
+  html, body {
+    color-scheme: light only;
+    background: var(--white) !important;
+    color: var(--black) !important;
+  }
+
+  body {
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    background: var(--white);
+    color: var(--black);
+  }
+
+  .widget {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px;
+    background: var(--white);
+  }
+
+  /* ── Container ── */
+  .notif-wrap {
+    border: 1px solid var(--grey-rule);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    background: var(--white);
+  }
+
+  /* ── Header row ── */
+  .notif-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .notif-title {
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--black);
+    white-space: nowrap;
+  }
+
+  .notif-subtitle {
+    font-size: 0.74rem;
+    font-weight: 300;
+    color: var(--grey-mid);
+    font-style: italic;
+  }
+
+  /* ── Form fields ── */
+  .notif-fields {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .notif-row-1 { margin-bottom: 8px; }
+  .notif-row-2 { margin-bottom: 0; }
+
+  .notif-field {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Row 2 proportions */
+  .field-date   { flex: 0 1 155px; }
+  .field-venue  { flex: 2; }
+  .field-program { flex: 2; }
+
+  .notif-multi {
+    font-size: 0.68rem;
+    font-weight: 300;
+    color: var(--grey-light);
+    font-style: italic;
+    letter-spacing: 0.03em;
+    margin-top: 10px;
+  }
+
+  .notif-field label {
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--grey-mid);
+  }
+
+  .notif-field input {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: var(--black);
+    background: var(--white);
+    border: 1px solid var(--grey-rule);
+    border-radius: 2px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .notif-field input::placeholder {
+    color: #ccc;
+    font-weight: 300;
+  }
+
+  .notif-field input:focus {
+    border-color: var(--accent);
+  }
+
+  .optional {
+    font-size: 0.55rem;
+    color: var(--grey-light);
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-left: 3px;
+  }
+
+  /* File input */
+  .notif-field input[type="file"] {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    color: var(--grey-mid);
+    cursor: pointer;
+    background: var(--white);
+  }
+
+  .notif-field input[type="file"]::-webkit-file-upload-button {
+    font-family: var(--font);
+    font-size: 0.66rem;
+    font-weight: 400;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--white);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    padding: 3px 8px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .notif-field input[type="file"]::-webkit-file-upload-button:hover {
+    background: var(--accent);
+    color: var(--white);
+  }
+
+  /* Date input */
+  .notif-field input[type="date"] {
+    color: var(--black);
+  }
+
+  .notif-field input[type="date"]:invalid,
+  .notif-field input[type="date"]:not([value]) {
+    color: #ccc;
+  }
+  .notif-submit {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  .notif-submit button {
+    font-family: var(--font);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    background: var(--accent);
+    border: none;
+    border-radius: 2px;
+    padding: 8px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, opacity 0.15s;
+    height: 34px;
+  }
+
+  .notif-submit button:hover {
+    background: #5a7888;
+  }
+
+  .notif-submit button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* ── Confirmation / error ── */
+  .notif-confirm {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 0.76rem;
+    font-weight: 300;
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .notif-confirm.visible {
+    display: flex;
+  }
+
+  .notif-confirm.error {
+    color: #b05050;
+  }
+
+  .notif-confirm-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .notif-confirm.error .notif-confirm-dot {
+    background: #b05050;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 560px) {
+    .widget { padding: 20px 14px; }
+    .notif-wrap { padding: 14px 16px; }
+
+    .notif-header {
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 12px;
+    }
+
+    /* Row 1: Name full width, Email + Piece side by side */
+    .notif-row-1 { flex-wrap: wrap; }
+    .field-name  { flex: 1 1 100%; }
+    .field-email { flex: 1 1 calc(50% - 4px); }
+    .field-piece { flex: 1 1 calc(50% - 4px); }
+
+    /* Row 2: Date + Venue side by side, Program + Submit full width */
+    .notif-row-2  { flex-wrap: wrap; }
+    .field-date   { flex: 1 1 calc(40% - 4px); }
+    .field-venue  { flex: 1 1 calc(60% - 4px); }
+    .field-program { flex: 1 1 100%; }
+
+    .notif-submit { flex: 1 1 100%; }
+    .notif-submit button { width: 100%; height: 38px; }
+  }
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="notif-wrap">
+
+    <div class="notif-header">
+      <span class="notif-title">Performing my work?</span>
+      <span class="notif-subtitle">Let me know and I'll add you to the list.</span>
+    </div>
+
+    <form id="notifForm" novalidate>
+
+      <!-- Row 1: Who + What -->
+      <div class="notif-fields notif-row-1">
+        <div class="notif-field field-name">
+          <label for="f-name">Name</label>
+          <input type="text" id="f-name" name="name" placeholder="First & Last, or Ensemble Name" autocomplete="name">
+        </div>
+        <div class="notif-field field-email">
+          <label for="f-email">Email</label>
+          <input type="email" id="f-email" name="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="notif-field field-piece">
+          <label for="f-piece">Piece(s)</label>
+          <input type="text" id="f-piece" name="piece" placeholder="Title(s)">
+        </div>
+      </div>
+
+      <!-- Row 2: When + Where + Program + Submit -->
+      <div class="notif-fields notif-row-2">
+        <div class="notif-field field-date">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date" name="date">
+        </div>
+        <div class="notif-field field-venue">
+          <label for="f-venue">Venue</label>
+          <input type="text" id="f-venue" name="venue" placeholder="Place, City, State / Country">
+        </div>
+        <div class="notif-field field-program">
+          <label for="f-program">Program <span class="optional">(optional)</span></label>
+          <input type="file" id="f-program" name="upload" accept=".pdf,image/*">
+        </div>
+        <div class="notif-submit">
+          <button type="submit" id="submitBtn">Send</button>
+        </div>
+      </div>
+
+    </form>
+
+    <p class="notif-multi">Performing across multiple dates or venues? Please fill out once per event.</p>
+
+    <div class="notif-confirm" id="notifConfirm">
+      <span class="notif-confirm-dot"></span>
+      <span id="confirmMsg">Thanks — I'll add you to the list.</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mgolqyey';
+
+const form = document.getElementById('notifForm');
+const confirm = document.getElementById('notifConfirm');
+const confirmMsg = document.getElementById('confirmMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const name  = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const piece = document.getElementById('f-piece').value.trim();
+  const date  = document.getElementById('f-date').value;
+  const venue = document.getElementById('f-venue').value.trim();
+  const programFile = document.getElementById('f-program').files[0];
+
+  if (!name || !email || !piece) {
+    confirm.className = 'notif-confirm error visible';
+    confirmMsg.textContent = 'Please fill in your name, email, and the piece title.';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '…';
+
+  // Use FormData so file attachment is included
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('email', email);
+  formData.append('piece', piece);
+  if (date) formData.append('date', date);
+  if (venue) formData.append('venue', venue);
+  if (programFile) formData.append('upload', programFile);
+
+  try {
+    const res = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: formData,
+    });
+
+    if (res.ok) {
+      form.style.display = 'none';
+      confirm.className = 'notif-confirm visible';
+      confirmMsg.textContent = 'Thanks — I\'ll add you to the list.';
+    } else {
+      throw new Error('Server error');
+    }
+  } catch {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Send';
+    confirm.className = 'notif-confirm error visible';
+    confirmMsg.textContent = 'Something went wrong. Try emailing me directly.';
+  }
+});
+</script>
+</body>
+</html>
