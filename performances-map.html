@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Map — Tyler Kline</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #1a1a1a;
+    --grey-dark: #444;
+    --grey-mid: #777;
+    --grey-light: #999;
+    --grey-rule: #dedede;
+    --accent: #6B8A9A;
+    --accent-light: #f0f5f7;
+    --white: #ffffff;
+    --font: 'Jost', 'Futura', sans-serif;
+  }
+
+  html, body {
+    color-scheme: light only;
+    background: var(--white) !important;
+    color: var(--black) !important;
+  }
+
+  body {
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background: var(--white);
+    color: var(--black);
+  }
+
+  .widget {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 36px 20px 48px;
+    background: var(--white);
+    color: var(--black);
+  }
+
+  /* ── Header ── */
+  .widget-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--black);
+  }
+
+  .widget-header h1 {
+    font-weight: 200;
+    font-size: 1.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .widget-header p {
+    font-size: 0.74rem;
+    color: var(--grey-mid);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  .premiere-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--grey-mid);
+    letter-spacing: 0.07em;
+    font-weight: 300;
+  }
+
+  .premiere-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── Tab nav ── */
+  .tab-nav {
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--grey-rule);
+  }
+
+  /* Row 1: Full History + Upcoming — no scroll, wraps if needed */
+  .tab-row-1 {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--grey-rule);
+  }
+
+  /* Row 2: Years — horizontal scroll on mobile */
+  .tab-row-2 {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-row-2::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 0.74rem;
+    font-weight: 300;
+    letter-spacing: 0.07em;
+    color: var(--grey-mid);
+    padding: 8px 16px;
+    transition: color 0.15s;
+    position: relative;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: transparent;
+    transition: background 0.15s;
+  }
+
+  .tab-btn:hover { color: var(--black); }
+
+  .tab-btn.active {
+    color: var(--black);
+    font-weight: 500;
+  }
+
+  .tab-btn.active::after {
+    background: var(--accent);
+  }
+
+  .tab-btn.upcoming-tab {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .tab-btn.upcoming-tab:not(.active) { color: #90b4c2; }
+
+  .tab-btn.full-history-tab {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 8px 4px;
+    font-size: 0.7rem;
+    color: var(--grey-light);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--grey-rule);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stat-num {
+    font-weight: 500;
+    font-style: normal;
+    color: var(--grey-mid);
+    font-size: 0.78rem;
+  }
+
+  /* ── Map ── */
+  #map {
+    width: 100%;
+    height: 480px;
+  }
+
+  .leaflet-container {
+    background: #e8e8e8;
+    font-family: var(--font) !important;
+  }
+
+  /* ── Leaflet popup ── */
+  .leaflet-popup-content-wrapper {
+    border-radius: 2px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.13);
+    font-family: var(--font);
+    padding: 0;
+    border: none;
+  }
+
+  .leaflet-popup-content { margin: 0; }
+
+  .popup-inner {
+    padding: 11px 15px;
+    min-width: 200px;
+    max-width: 280px;
+  }
+
+  .popup-perf {
+    padding: 6px 0;
+    border-top: 1px solid #f0f0f0;
+    line-height: 1.45;
+  }
+
+  .popup-perf:first-child { border-top: none; padding-top: 0; }
+
+  .popup-line1 {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 1px;
+    flex-wrap: wrap;
+  }
+
+  .popup-date {
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: var(--grey-mid);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .popup-piece {
+    font-size: 0.8rem;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--black);
+    line-height: 1.3;
+  }
+
+  .popup-premiere {
+    font-style: normal;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .popup-performer {
+    font-size: 0.74rem;
+    font-weight: 300;
+    color: var(--grey-dark);
+    margin-bottom: 4px;
+  }
+
+  .popup-venue-line {
+    font-size: 0.7rem;
+    font-weight: 300;
+    color: var(--grey-mid);
+    border-top: 1px solid #f0f0f0;
+    padding-top: 4px;
+    margin-top: 2px;
+  }
+
+  .popup-more {
+    font-size: 0.68rem;
+    color: var(--grey-light);
+    font-style: italic;
+    padding-top: 5px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 2px;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 540px) {
+    .widget {
+      padding: 24px 14px 36px;
+    }
+
+    .widget-header h1 {
+      font-size: 1.3rem;
+      letter-spacing: 0.18em;
+    }
+
+    .widget-header p {
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+    }
+
+    .tab-btn {
+      font-size: 0.68rem;
+      padding: 7px 12px;
+    }
+
+    .tab-btn.full-history-tab {
+      font-size: 0.64rem;
+    }
+
+    #map {
+      height: 340px;
+    }
+
+    .stats-bar {
+      gap: 8px 14px;
+      font-size: 0.65rem;
+    }
+
+    .stat-num {
+      font-size: 0.72rem;
+    }
+
+    .popup-inner {
+      min-width: 160px;
+      max-width: 220px;
+      padding: 9px 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="widget">
+
+  <div class="widget-header">
+    <h1>Performance Map</h1>
+    <p>2010 – present &nbsp;·&nbsp; including upcoming performances</p>
+    <div class="premiere-key">
+      <span class="premiere-dot"></span>
+      world premiere
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <div class="tab-row tab-row-1" id="tabRow1"></div>
+    <div class="tab-row tab-row-2" id="tabRow2"></div>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item"><span class="stat-num" id="statPerfs">–</span> performances</div>
+    <div class="stat-item"><span class="stat-num" id="statVenues">–</span> venues</div>
+    <div class="stat-item"><span class="stat-num" id="statCities">–</span> cities</div>
+    <div class="stat-item"><span class="stat-num" id="statCountries">–</span> countries</div>
+  </div>
+
+  <div id="map"></div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+const SHEET_ID = '1lX5NAn76JfdchYjejh6yAIC-jcZgy-tfy84IOs4vjDQ';
+const SHEET_NAME = 'Sheet1';
+const ACCENT = '#6B8A9A';
+
+// Coordinates are read directly from the Google Sheet (columns Lat, Lng)
+
+// ─────────────────────────────────────────────
+// MAP INIT — centered on Atlantic so both Americas and Europe/Asia visible
+// ─────────────────────────────────────────────
+const map = L.map('map', {
+  center: [25, 15],
+  zoom: 2,
+  zoomControl: true,
+  worldCopyJump: true,   // pins appear on wrapped copies
+  maxBounds: [[-85, -Infinity], [85, Infinity]],
+  maxBoundsViscosity: 0.8,
+  minZoom: 2,
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19,
+  noWrap: false,
+}).addTo(map);
+
+// ─────────────────────────────────────────────
+// PIN
+// ─────────────────────────────────────────────
+function pinSizeForZoom(zoom) {
+  if (zoom <= 2)  return 11;
+  if (zoom <= 4)  return 13;
+  if (zoom <= 6)  return 15;
+  if (zoom <= 8)  return 17;
+  if (zoom <= 10) return 19;
+  return 21;
+}
+
+function makePinIcon(size) {
+  const h = Math.round(size * 1.5);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${h}" viewBox="0 0 20 30">
+    <path d="M10 1C5.58 1 2 4.58 2 9c0 6.25 8 20 8 20S18 15.25 18 9C18 4.58 14.42 1 10 1z"
+      fill="${ACCENT}" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="10" cy="9" r="3.2" fill="#ffffff"/>
+  </svg>`;
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize: [size, h],
+    iconAnchor: [size / 2, h],
+    popupAnchor: [0, -(h + 2)],
+  });
+}
+
+// ─────────────────────────────────────────────
+// FETCH SHEET
+// ─────────────────────────────────────────────
+async function loadSheet() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+  const rows = json.table.rows;
+  const cols = json.table.cols.map(c => c.label.trim());
+
+  return rows.map(row => {
+    const get = (label) => {
+      const i = cols.indexOf(label);
+      if (i === -1) return '';
+      const cell = row.c[i];
+      return cell && cell.v !== null ? String(cell.v).trim() : '';
+    };
+
+    let rawDate = get('Date');
+    let dateObj = null;
+    const dm = rawDate.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (dm) {
+      dateObj = new Date(parseInt(dm[1]), parseInt(dm[2]), parseInt(dm[3]));
+    } else if (rawDate) {
+      dateObj = new Date(rawDate);
+    }
+
+    const isPremiere = get('Composition').endsWith('*');
+    const composition = get('Composition').replace(/\*$/, '').trim();
+    const venueRaw = get('Venue/Event').split('\n')[0].trim();
+    const city = get('City');
+    const country = get('Country');
+
+    const latRaw = get('Lat');
+    const lngRaw = get('Lng');
+    const lat = latRaw ? parseFloat(latRaw) : null;
+    const lng = lngRaw ? parseFloat(lngRaw) : null;
+
+    return {
+      dateObj,
+      dateStr: dateObj ? formatDate(dateObj) : rawDate,
+      year: dateObj ? dateObj.getFullYear() : null,
+      composition,
+      isPremiere,
+      performers: get('Performer(s)/Ensembles'),
+      venue: venueRaw,
+      city,
+      state: get('State'),
+      country,
+      lat,
+      lng,
+      hasCoords: lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng),
+    };
+  }).filter(r => r.year && r.year > 1950 && r.composition);
+}
+
+function formatDate(d) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function venueKey(venue, city, country) {
+  return `${venue}|${city}|${country}`.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+// MARKERS
+// ─────────────────────────────────────────────
+let currentMarkers = [];
+
+function clearMarkers() {
+  currentMarkers.forEach(m => map.removeLayer(m));
+  currentMarkers = [];
+}
+
+function buildMarkers(performances) {
+  clearMarkers();
+
+  const venueMap = new Map();
+  performances.forEach(p => {
+    if (!p.hasCoords) return;
+    const vk = p.venue + '|' + p.city;
+    if (!venueMap.has(vk)) {
+      venueMap.set(vk, {
+        coords: { lat: p.lat, lng: p.lng },
+        perfs: [],
+        venue: p.venue,
+        city: p.city,
+        state: p.state,
+        country: p.country,
+      });
+    }
+    venueMap.get(vk).perfs.push(p);
+  });
+
+  const icon = makePinIcon(pinSizeForZoom(map.getZoom()));
+
+  venueMap.forEach(({ coords, perfs, venue, city, state, country }) => {
+    const loc = [city, state && state !== '- - -' ? state : null, country].filter(Boolean).join(', ');
+    const shown = perfs.slice(0, 4);
+    const extra = perfs.length - shown.length;
+
+    const perfsHtml = shown.map(p => `
+      <div class="popup-perf">
+        <div class="popup-line1">
+          <span class="popup-date">${esc(p.dateStr)}</span>
+          <span class="popup-piece">${esc(p.composition)}</span>
+          ${p.isPremiere ? '<span class="popup-premiere">★ premiere</span>' : ''}
+        </div>
+        <div class="popup-performer">${esc(p.performers)}</div>
+      </div>`).join('');
+
+    const extraHtml = extra > 0
+      ? `<div class="popup-more">+ ${extra} more performance${extra !== 1 ? 's' : ''} at this venue</div>`
+      : '';
+
+    const venueLocHtml = `<div class="popup-venue-line">${esc(venue)}<br><span style="color:#aaa">${esc(loc)}</span></div>`;
+
+    const popup = `<div class="popup-inner">
+      ${perfsHtml}
+      ${extraHtml}
+      ${venueLocHtml}
+    </div>`;
+
+    const marker = L.marker([coords.lat, coords.lng], { icon })
+      .bindPopup(popup, { maxWidth: 320 })
+      .addTo(map);
+
+    currentMarkers.push(marker);
+  });
+
+  map.off('zoomend.pins');
+  map.on('zoomend.pins', () => {
+    const newIcon = makePinIcon(pinSizeForZoom(map.getZoom()));
+    currentMarkers.forEach(m => m.setIcon(newIcon));
+  });
+}
+
+// ─────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────
+function updateStats(performances) {
+  const withCoords = performances.filter(p => p.hasCoords);
+  const venues = new Set(withCoords.map(p => p.venue + '|' + p.city)).size;
+  const cities = new Set(withCoords.map(p => `${p.city}|${p.country}`)).size;
+  const countries = new Set(withCoords.map(p => p.country)).size;
+
+  document.getElementById('statPerfs').textContent = performances.length;
+  document.getElementById('statVenues').textContent = venues;
+  document.getElementById('statCities').textContent = cities;
+  document.getElementById('statCountries').textContent = countries;
+}
+
+// ─────────────────────────────────────────────
+// FIT BOUNDS
+// ─────────────────────────────────────────────
+function fitToPerformances(performances, forceWorld = false) {
+  if (forceWorld) {
+    map.setView([25, 15], 2);
+    return;
+  }
+
+  const coords = performances
+    .filter(p => p.hasCoords)
+    .map(p => ({ lat: p.lat, lng: p.lng }));
+
+  if (coords.length === 0) return;
+  if (coords.length === 1) {
+    map.setView([coords[0].lat, coords[0].lng], 10);
+    return;
+  }
+
+  const bounds = L.latLngBounds(coords.map(c => [c.lat, c.lng]));
+  map.fitBounds(bounds, { padding: [56, 56], maxZoom: 11 });
+}
+
+// ─────────────────────────────────────────────
+// RENDER / TAB SYSTEM
+// ─────────────────────────────────────────────
+function showTab(tabId, performances, forceWorld = false) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-tab="${tabId}"]`);
+  if (btn) btn.classList.add('active');
+
+  buildMarkers(performances);
+  updateStats(performances);
+  fitToPerformances(performances, forceWorld);
+}
+
+function render(performances) {
+  const now = new Date();
+  now.setHours(0,0,0,0);
+
+  const upcoming = performances.filter(p => p.dateObj >= now).sort((a,b) => b.dateObj - a.dateObj);
+  const past = performances.filter(p => p.dateObj < now).sort((a,b) => b.dateObj - a.dateObj);
+  const years = [...new Set(past.map(p => p.year))].sort((a,b) => b - a);
+
+  const row1 = document.getElementById('tabRow1');
+  const row2 = document.getElementById('tabRow2');
+  row1.innerHTML = '';
+  row2.innerHTML = '';
+
+  // Row 1: Full History + Upcoming
+  const allBtn = document.createElement('button');
+  allBtn.className = 'tab-btn full-history-tab active';
+  allBtn.dataset.tab = 'all';
+  allBtn.textContent = 'Full Performance History';
+  allBtn.onclick = () => showTab('all', performances, true);
+  row1.appendChild(allBtn);
+
+  const upBtn = document.createElement('button');
+  upBtn.className = 'tab-btn upcoming-tab';
+  upBtn.dataset.tab = 'upcoming';
+  upBtn.textContent = 'upcoming';
+  upBtn.onclick = () => showTab('upcoming', upcoming);
+  row1.appendChild(upBtn);
+
+  // Row 2: years
+  years.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.dataset.tab = String(y);
+    btn.textContent = y;
+    btn.onclick = () => {
+      const yearPerfs = past.filter(p => p.year === y);
+      showTab(String(y), yearPerfs);
+    };
+    row2.appendChild(btn);
+  });
+
+  // Default: Full Performance History
+  showTab('all', performances, true);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+loadSheet()
+  .then(data => {
+    render(data);
+    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 500);
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('statsBar').textContent = 'Could not load performance data.';
+  });
+
+window.addEventListener('resize', () => map.invalidateSize());
+</script>
+</body>
+</html>
