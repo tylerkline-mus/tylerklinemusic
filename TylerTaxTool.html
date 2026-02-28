@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loose Leaf Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1c2b1e;
+    --paper: #f4f1ea;
+    --paper-dark: #e8e3d8;
+    --leaf: #5a7a3a;
+    --leaf-light: #d4e6bc;
+    --sky: #4a8fa8;
+    --sky-light: #c2dfe8;
+    --muted: #6b7c6e;
+    --rule: #cdd4c0;
+    --accent: #5a7a3a;
+    --warn: #a0522d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 27px, var(--rule) 27px, var(--rule) 28px);
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .header-left h1 em {
+    color: var(--leaf);
+    font-style: italic;
+  }
+
+  .header-left p {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .auth-status {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    padding: 6px 12px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .auth-status.signed-out { color: var(--muted); border: 1px solid var(--rule); }
+  .auth-status.signed-in { color: var(--leaf); border: 1px solid var(--leaf); background: var(--leaf-light); }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 8px 16px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: all 0.15s;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .btn-ghost { background: transparent; border: 1px solid var(--ink); color: var(--ink); }
+  .btn-ghost:hover { background: var(--ink); color: var(--paper); }
+  .btn-primary { background: var(--leaf); border: 1px solid var(--leaf); color: white; }
+  .btn-primary:hover { background: #3d5a27; }
+  .btn-sky { background: var(--sky); border: 1px solid var(--sky); color: white; }
+  .btn-sky:hover { background: #366880; }
+  .btn-danger { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+  .btn-danger:hover { background: var(--warn); color: white; }
+
+  /* ── Setup banner ── */
+  .setup-banner {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .setup-banner p { font-size: 0.78rem; line-height: 1.6; }
+  .setup-banner p span { color: var(--leaf-light); font-weight: 500; }
+
+  /* ── Sheet config bar ── */
+  .sheet-bar {
+    background: var(--leaf-light);
+    border: 1px solid var(--leaf);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+  }
+
+  .sheet-bar label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+
+  .sheet-bar input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border: 1px solid var(--leaf);
+    background: white;
+    color: var(--ink);
+    flex: 1;
+    min-width: 200px;
+    outline: none;
+  }
+
+  .sheet-bar input:focus { border-color: var(--ink); }
+
+  /* ── Section tabs ── */
+  /* ── Dashboard ── */
+  .dashboard {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 18px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-main {
+    flex: 1;
+    min-width: 200px;
+    padding-right: 24px;
+    border-right: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .dashboard-main .lbl {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    opacity: 0.5;
+    margin-bottom: 4px;
+  }
+
+  .dashboard-main .big-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    color: var(--leaf-light);
+    line-height: 1;
+  }
+
+  .dashboard-main .sub {
+    font-size: 0.62rem;
+    opacity: 0.45;
+    margin-top: 5px;
+    letter-spacing: 0.05em;
+  }
+
+  .dashboard-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    padding-left: 24px;
+    flex: 2;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-stats-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-stat .lbl {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.45;
+    margin-bottom: 3px;
+  }
+
+  .dashboard-stat .val {
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .dashboard-stat .val.green { color: var(--leaf-light); }
+  .dashboard-stat .val.blue { color: var(--sky-light); }
+
+  .dashboard-note-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin-top: 4px;
+  }
+
+  .dashboard-note-row .note-lbl {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.4;
+    white-space: nowrap;
+  }
+
+  .dashboard-note-input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    color: var(--paper);
+    outline: none;
+    flex: 1;
+    padding: 2px 4px;
+    letter-spacing: 0.03em;
+    opacity: 0.7;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+
+  .dashboard-note-input::placeholder { opacity: 0.35; }
+  .dashboard-note-input:focus { opacity: 1; border-color: var(--leaf-light); }
+
+  .section-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 0;
+  }
+
+  .section-tab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 10px 20px;
+    border: none;
+    background: var(--paper-dark);
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-right: 1px solid var(--rule);
+    transition: all 0.15s;
+  }
+
+  .section-tab.active { background: var(--ink); color: var(--paper); }
+  .section-tab:hover:not(.active) { background: var(--rule); }
+
+  /* ── Year / filter row ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+
+  .year-pills { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+
+  .year-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 4px 12px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+
+  .year-pill.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .year-add-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 4px 10px;
+    border: 1px dashed var(--muted);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .year-add-btn:hover { border-color: var(--leaf); color: var(--leaf); }
+
+  .btn-add {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 8px 18px;
+    background: var(--leaf);
+    color: white;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s;
+    border-radius: 2px;
+  }
+  .btn-add:hover { background: #3d5a27; }
+
+  /* ── Summary strip ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 20px;
+  }
+
+  .summary-cell { background: var(--paper); padding: 12px 16px; }
+
+  .summary-cell .lbl {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .summary-cell .val { font-size: 1.1rem; font-weight: 500; }
+  .summary-cell .val.green { color: var(--leaf); }
+  .summary-cell .val.blue { color: var(--sky); }
+
+  /* ── Mileage bar ── */
+  .mi-bar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 20px;
+    display: flex;
+    gap: 36px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .mi-bar .stat .lbl { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.55; margin-bottom: 3px; }
+  .mi-bar .stat .val { font-size: 1.2rem; font-weight: 500; }
+  .mi-bar .stat .val.green { color: var(--leaf-light); }
+
+  /* ── Table ── */
+  .ledger { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+
+  .ledger thead th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .ledger tbody tr { border-bottom: 1px solid var(--rule); transition: background 0.1s; }
+  .ledger tbody tr:hover { background: var(--paper-dark); }
+  .ledger tbody td { padding: 9px 10px; vertical-align: middle; }
+  .ledger td.rc { text-align: right; font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    background: var(--paper-dark);
+    color: var(--muted);
+    border: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  .synced-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .synced-dot.yes { background: var(--leaf); }
+  .synced-dot.no { background: var(--warn); }
+  .synced-dot.pending { background: var(--sky); }
+
+  .month-hdr td {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    padding: 10px 10px 3px;
+    background: var(--paper-dark);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--rule);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+    transition: color 0.15s;
+  }
+  .del-btn:hover { color: var(--warn); }
+
+  .empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+  .empty-state .big { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--rule); margin-bottom: 6px; }
+
+  /* ── Panels ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Sync status ── */
+  .sync-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .sync-row .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .sync-row.ok .dot { background: var(--leaf); }
+  .sync-row.err .dot { background: var(--warn); }
+  .sync-row.idle .dot { background: var(--rule); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28,43,30,0.65);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    padding: 30px;
+    width: 100%;
+    max-width: 500px;
+    transform: translateY(8px);
+    transition: transform 0.2s;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+  }
+
+  .form-row { margin-bottom: 14px; }
+
+  .form-row label {
+    display: block;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .form-row input,
+  .form-row select,
+  .form-row textarea {
+    width: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    padding: 8px 11px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    border-radius: 2px;
+  }
+  .form-row input:focus,
+  .form-row select:focus,
+  .form-row textarea:focus { border-color: var(--leaf); }
+  .form-row textarea { resize: vertical; min-height: 56px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+
+  .btn-cancel {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .btn-save {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 8px 20px;
+    background: var(--leaf);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #3d5a27; }
+
+  .hint { font-size: 0.6rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── Setup modal ── */
+  .setup-modal { max-width: 580px; }
+
+  .setup-step {
+    background: var(--paper-dark);
+    border-left: 3px solid var(--leaf);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 0.76rem;
+    line-height: 1.7;
+  }
+
+  .setup-step strong { color: var(--leaf); }
+  .setup-step code {
+    background: var(--ink);
+    color: var(--leaf-light);
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    border-radius: 2px;
+  }
+
+  .setup-step a { color: var(--sky); }
+
+  .config-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .config-input-row input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    padding: 8px 12px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    flex: 1;
+    outline: none;
+    border-radius: 2px;
+  }
+  .config-input-row input:focus { border-color: var(--leaf); }
+
+  .badge-shared {
+    display: inline-block;
+    font-size: 0.56rem;
+    padding: 2px 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    background: var(--sky-light);
+    color: var(--sky);
+    border: 1px solid var(--sky);
+    white-space: nowrap;
+    margin-left: 5px;
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    color: var(--muted);
+    user-select: none;
+  }
+
+  .form-check input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--sky);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .form-check span { letter-spacing: 0.03em; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.72rem;
+    padding: 10px 18px;
+    border-radius: 2px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+  }
+  .toast.show { opacity: 1; }
+  .toast.ok { border-left: 3px solid var(--leaf); }
+  .toast.err { border-left: 3px solid var(--warn); }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 1.7rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .section-tab { padding: 8px 12px; font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <h1>Loose Leaf <em>Ledger</em></h1>
+      <p>Self-employment expense tracker &mdash; T. Kline</p>
+    </div>
+    <div class="header-right">
+      <span class="auth-status signed-out" id="authStatus">Not connected to Sheets</span>
+      <button class="btn btn-ghost" id="exportBtn">&#8595; Export CSV</button>
+      <button class="btn btn-sky" id="setupBtn">&#9881; Setup</button>
+      <button class="btn btn-primary" id="signInBtn" style="display:none">Sign in with Google</button>
+      <button class="btn btn-ghost" id="signOutBtn" style="display:none">Sign out</button>
+    </div>
+  </header>
+
+  <div id="setupBanner" class="setup-banner">
+    <p>
+      <span>Google Sheets sync not configured.</span> Click <strong>Setup</strong> to connect your spreadsheet and sync entries across all devices automatically. Or use the app locally &mdash; CSV export always available.
+    </p>
+    <button class="btn btn-primary" onclick="openSetup()">Get Started</button>
+  </div>
+
+  <div id="sheetBar" class="sheet-bar" style="display:none">
+    <label>Spreadsheet ID</label>
+    <input type="text" id="sheetIdInput" placeholder="Paste your Google Sheet ID here">
+    <button class="btn btn-primary" onclick="saveSheetId()">Save</button>
+    <button class="btn btn-ghost" onclick="openInSheets()">Open Sheet &#8599;</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+    <div class="dashboard-main">
+      <div class="lbl">Total Deductions <span id="dashYear"></span></div>
+      <div class="big-num" id="dashTotal">$0.00</div>
+      <div class="sub" id="dashSub">across all categories</div>
+    </div>
+    <div class="dashboard-stats">
+      <div class="dashboard-stats-row">
+        <div class="dashboard-stat">
+          <div class="lbl">Expenses</div>
+          <div class="val green" id="dashExp">$0.00</div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="lbl">Mileage Deduction</div>
+          <div class="val green" id="dashMi">$0.00</div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="lbl">Business Days</div>
+          <div class="val blue" id="dashDays">0</div>
+        </div>
+        <div class="dashboard-stat">
+          <div class="lbl">Miles Driven</div>
+          <div class="val" id="dashMiles">0</div>
+        </div>
+      </div>
+      <div class="dashboard-note-row">
+        <span class="note-lbl">Year note</span>
+        <input class="dashboard-note-input" id="dashNote" type="text" placeholder="e.g. First full year freelance, Japan residency July…" maxlength="120">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-tabs">    <button class="section-tab active" data-section="expenses">Expenses</button>
+    <button class="section-tab" data-section="perdiem">Per Diem</button>
+    <button class="section-tab" data-section="mileage">Mileage</button>
+  </div>
+
+  <!-- EXPENSES -->
+  <div class="panel active" id="panel-expenses">
+    <div class="toolbar">
+      <div class="year-pills" id="expYears"></div>
+      <button class="btn-add" id="addExpBtn">+ Log Expense</button>
+    </div>
+    <div class="summary" id="expSummary"></div>
+    <div class="sync-row idle" id="expSyncRow"><div class="dot"></div><span id="expSyncMsg">Not synced to Sheets</span></div>
+    <table class="ledger">
+      <thead><tr><th>Date</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">Sync</th><th></th></tr></thead>
+      <tbody id="expBody"></tbody>
+    </table>
+    <div id="expEmpty" class="empty-state" style="display:none"><div class="big">No entries yet.</div>Log your first expense above.</div>
+  </div>
+
+  <!-- PER DIEM -->
+  <div class="panel" id="panel-perdiem">
+    <div class="toolbar">
+      <div class="year-pills" id="pdYears"></div>
+      <button class="btn-add" id="addPdBtn">+ Log Trip</button>
+    </div>
+    <div class="summary" id="pdSummary"></div>
+    <div class="sync-row idle" id="pdSyncRow"><div class="dot"></div><span id="pdSyncMsg">Not synced to Sheets</span></div>
+    <table class="ledger">
+      <thead><tr><th>Dates</th><th>City</th><th>Purpose</th><th style="text-align:right">Days</th><th style="text-align:right">Sync</th><th></th></tr></thead>
+      <tbody id="pdBody"></tbody>
+    </table>
+    <div id="pdEmpty" class="empty-state" style="display:none"><div class="big">No trips logged.</div>Add a business trip above.</div>
+  </div>
+
+  <!-- MILEAGE -->
+  <div class="panel" id="panel-mileage">
+    <div class="toolbar">
+      <div class="year-pills" id="miYears"></div>
+      <button class="btn-add" id="addMiBtn">+ Log Miles</button>
+    </div>
+    <div class="mi-bar" id="miBar"></div>
+    <div class="sync-row idle" id="miSyncRow"><div class="dot"></div><span id="miSyncMsg">Not synced to Sheets</span></div>
+    <table class="ledger">
+      <thead><tr><th>Date</th><th>Purpose / Route</th><th style="text-align:right">Miles</th><th style="text-align:right">Deduction</th><th style="text-align:right">Sync</th><th></th></tr></thead>
+      <tbody id="miBody"></tbody>
+    </table>
+    <div id="miEmpty" class="empty-state" style="display:none"><div class="big">No miles logged.</div>Start tracking your business driving above.</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SETUP MODAL -->
+<div class="modal-overlay" id="setupModal">
+  <div class="modal setup-modal">
+    <h2>Connect Google Sheets</h2>
+
+    <div class="setup-step">
+      <strong>Step 1 &mdash; Create a Google Cloud project</strong><br>
+      Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> and create a new project. Name it anything (e.g. <code>LLT Ledger</code>).
+    </div>
+
+    <div class="setup-step">
+      <strong>Step 2 &mdash; Enable the Google Sheets API</strong><br>
+      In your project, go to <strong>APIs &amp; Services &rarr; Library</strong>. Search for <code>Google Sheets API</code> and enable it.
+    </div>
+
+    <div class="setup-step">
+      <strong>Step 3 &mdash; Create OAuth credentials</strong><br>
+      Go to <strong>APIs &amp; Services &rarr; Credentials &rarr; Create Credentials &rarr; OAuth client ID</strong>.<br>
+      Choose <strong>Web application</strong>. Under <strong>Authorized JavaScript origins</strong>, add the full path to wherever you're hosting this file (e.g. <code>file://</code> if opening locally, or your GitHub Pages URL).<br>
+      Copy the <strong>Client ID</strong> that's generated.
+    </div>
+
+    <div class="setup-step">
+      <strong>Step 4 &mdash; Paste your Client ID below</strong>
+      <div class="config-input-row">
+        <input type="text" id="clientIdInput" placeholder="Paste Google OAuth Client ID here">
+        <button class="btn btn-primary" onclick="saveClientId()">Save</button>
+      </div>
+    </div>
+
+    <div class="setup-step">
+      <strong>Step 5 &mdash; Create your spreadsheet</strong><br>
+      Create a new Google Sheet. The app will automatically create three tabs: <code>Expenses</code>, <code>PerDiem</code>, and <code>Mileage</code>. Copy the Sheet ID from the URL (the long string between <code>/d/</code> and <code>/edit</code>) and paste it into the <strong>Spreadsheet ID</strong> bar at the top of the app after signing in.
+    </div>
+
+    <div class="setup-step">
+      <strong>Step 6 &mdash; Sign in</strong><br>
+      Click <strong>Sign in with Google</strong> in the header. Grant access when prompted. You're live.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="setupModal">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="expModal">
+  <div class="modal">
+    <h2>Log Expense</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>Date</label><input type="date" id="eDate"></div>
+      <div class="form-row"><label>Category</label>
+        <select id="eCat">
+          <option>Media</option>
+          <option>Software Subscription</option>
+          <option>Equipment</option>
+          <option>Supplies</option>
+          <option>Travel</option>
+          <option>Food &amp; Drink</option>
+          <option>Residency Fees</option>
+          <option>Application Fees</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>Description</label><input type="text" id="eDesc" placeholder="e.g. Bandcamp album, flight to Quebec City…"></div>
+    <div class="form-row"><label>Amount (USD)</label><input type="number" id="eAmt" step="0.01" min="0" placeholder="0.00"></div>
+    <div class="form-row"><label>Notes (optional)</label><textarea id="eNotes" placeholder="Currency conversion, business purpose, etc."></textarea></div>
+    <label class="form-check"><input type="checkbox" id="eShared"><span>Shared expense with Susanna</span></label>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="expModal">Cancel</button>
+      <button class="btn-save" id="saveExp">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PER DIEM MODAL -->
+<div class="modal-overlay" id="pdModal">
+  <div class="modal">
+    <h2>Log Business Trip</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>Start Date</label><input type="date" id="pdStart"></div>
+      <div class="form-row"><label>End Date</label><input type="date" id="pdEnd"></div>
+    </div>
+    <div class="form-row"><label>City</label><input type="text" id="pdCity" placeholder="e.g. New York City, Quebec City, Tokyo"></div>
+    <div class="form-row"><label>Business Purpose</label><input type="text" id="pdPurpose" placeholder="e.g. Premiere of composition, residency, conference"></div>
+    <div class="form-row"><label>Notes (optional)</label><textarea id="pdNotes" placeholder="Venue, presenter, any additional context…"></textarea></div>
+    <label class="form-check"><input type="checkbox" id="pdShared"><span>Shared trip with Susanna</span></label>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="pdModal">Cancel</button>
+      <button class="btn-save" id="savePd">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MILEAGE MODAL -->
+<div class="modal-overlay" id="miModal">
+  <div class="modal">
+    <h2>Log Miles</h2>
+    <div class="form-row"><label>Date</label><input type="date" id="mDate"></div>
+    <div class="form-row"><label>Purpose / Route</label><input type="text" id="mDesc" placeholder="e.g. Drive to rehearsal, Cincinnati to Louisville"></div>
+    <div class="form-row">
+      <label>Miles</label>
+      <input type="number" id="mMiles" step="0.1" min="0" placeholder="0.0">
+      <div class="hint">Deduction calculated at $0.725/mile (2026 IRS rate — update manually each year)</div>
+    </div>
+    <label class="form-check"><input type="checkbox" id="miShared"><span>Shared trip with Susanna</span></label>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="miModal">Cancel</button>
+      <button class="btn-save" id="saveMi">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  CONFIG & STATE
+// ════════════════════════════════════════════
+const RATE = 0.725;
+const LOCAL_KEY = 'lll_data_v3';
+const CFG_KEY = 'lll_config';
+
+let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{"clientId":"","sheetId":""}');
+let store = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{"expenses":[],"perdiem":[],"mileage":[]}');
+let activeSection = 'expenses';
+let curYear = {};
+let gapiReady = false;
+let gisReady = false;
+let tokenClient = null;
+let isSignedIn = false;
+
+// Ensure all arrays exist
+['expenses','perdiem','mileage'].forEach(k => { if(!store[k]) store[k] = []; });
+
+// ════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════
+function saveLocal() { localStorage.setItem(LOCAL_KEY, JSON.stringify(store)); }
+function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmt(n) { return '$' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function today() { return new Date().toISOString().slice(0,10); }
+function localDate(s) { return new Date(s + 'T12:00:00'); }
+function shortDate(s) { return localDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function monthKey(s) { return s.slice(0,7); }
+function monthLabel(s) { return localDate(s).toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
+function daysBetween(a,b) { return Math.round((localDate(b)-localDate(a))/(864e5))+1; }
+function thisYear() { return new Date().getFullYear(); }
+
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 2800);
+}
+
+// ════════════════════════════════════════════
+//  YEAR MANAGEMENT
+// ════════════════════════════════════════════
+function getYearsFor(section) {
+  const key = section === 'perdiem' ? 'start' : 'date';
+  const fromData = store[section].map(e => parseInt((e[key]||'').slice(0,4))).filter(Boolean);
+  const allYears = new Set(fromData);
+  // Always include current year and next
+  const cy = thisYear();
+  allYears.add(cy);
+  return [...allYears].sort((a,b)=>b-a);
+}
+
+function ensureCurYear(section) {
+  const years = getYearsFor(section);
+  if (!curYear[section] || !years.includes(curYear[section])) {
+    curYear[section] = thisYear();
+  }
+}
+
+function renderYearPills(containerId, section) {
+  ensureCurYear(section);
+  const years = getYearsFor(section);
+  const el = document.getElementById(containerId);
+  el.innerHTML = years.map(y =>
+    `<button class="year-pill ${y===curYear[section]?'active':''}" data-year="${y}">${y}</button>`
+  ).join('') + `<button class="year-add-btn" data-section="${section}">+ Year</button>`;
+
+  el.querySelectorAll('.year-pill').forEach(b => b.addEventListener('click', () => {
+    curYear[section] = parseInt(b.dataset.year); render();
+  }));
+  el.querySelector('.year-add-btn').addEventListener('click', () => {
+    const y = prompt('Add year (e.g. 2027):');
+    const n = parseInt(y);
+    if (n > 2000 && n < 2100) { curYear[section] = n; render(); }
+  });
+}
+
+// ════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ════════════════════════════════════════════
+function attachDeletes(body, type) {
+  body.querySelectorAll('.del-btn').forEach(b => b.addEventListener('click', () => {
+    if (!confirm('Remove this entry?')) return;
+    store[type] = store[type].filter(e => e.id !== b.dataset.id);
+    saveLocal(); render();
+  }));
+}
+
+function syncDot(synced) {
+  if (!cfg.sheetId || !isSignedIn) return '';
+  const cls = synced ? 'yes' : 'no';
+  const title = synced ? 'Synced to Sheets' : 'Not yet synced';
+  return `<span class="synced-dot ${cls}" title="${title}"></span>`;
+}
+
+function renderExpenses() {
+  renderYearPills('expYears', 'expenses');
+  ensureCurYear('expenses');
+  const items = store.expenses.filter(e => e.date && e.date.startsWith(String(curYear.expenses))).sort((a,b)=>a.date.localeCompare(b.date));
+  const total = items.reduce((s,e)=>s+e.amount, 0);
+
+  document.getElementById('expSummary').innerHTML = `
+    <div class="summary-cell"><div class="lbl">Total ${curYear.expenses}</div><div class="val green">${fmt(total)}</div></div>
+    <div class="summary-cell"><div class="lbl">Entries</div><div class="val">${items.length}</div></div>`;
+
+  const body = document.getElementById('expBody');
+  const empty = document.getElementById('expEmpty');
+  if (!items.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  let lastM='', html='';
+  items.forEach(e => {
+    const mk = monthKey(e.date);
+    if (mk !== lastM) { html += `<tr class="month-hdr"><td colspan="6">${monthLabel(e.date)}</td></tr>`; lastM=mk; }
+    html += `<tr>
+      <td>${shortDate(e.date)}</td>
+      <td>${e.desc}${e.notes?`<br><span style="font-size:.62rem;color:var(--muted)">${e.notes}</span>`:''}</td>
+      <td><span class="badge">${e.category}</span>${e.shared?'<span class="badge-shared">Shared</span>':''}</td>
+      <td class="rc">${fmt(e.amount)}</td>
+      <td class="rc">${syncDot(e.synced)}</td>
+      <td><button class="del-btn" data-id="${e.id}">×</button></td>
+    </tr>`;
+  });
+  body.innerHTML = html;
+  attachDeletes(body, 'expenses');
+}
+
+function renderPerdiem() {
+  renderYearPills('pdYears', 'perdiem');
+  ensureCurYear('perdiem');
+  const items = store.perdiem.filter(e => e.start && e.start.startsWith(String(curYear.perdiem))).sort((a,b)=>a.start.localeCompare(b.start));
+  const totalDays = items.reduce((s,e)=>s+daysBetween(e.start,e.end), 0);
+
+  document.getElementById('pdSummary').innerHTML = `
+    <div class="summary-cell"><div class="lbl">Trips ${curYear.perdiem}</div><div class="val">${items.length}</div></div>
+    <div class="summary-cell"><div class="lbl">Total Business Days</div><div class="val green">${totalDays}</div></div>`;
+
+  const body = document.getElementById('pdBody');
+  const empty = document.getElementById('pdEmpty');
+  if (!items.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  let html='';
+  items.forEach(e => {
+    const days = daysBetween(e.start, e.end);
+    const range = e.start===e.end ? shortDate(e.start) : `${shortDate(e.start)} – ${shortDate(e.end)}`;
+    html += `<tr>
+      <td>${range}</td>
+      <td><strong>${e.city}</strong>${e.shared?'<span class="badge-shared">Shared</span>':''}</td>
+      <td>${e.purpose}${e.notes?`<br><span style="font-size:.62rem;color:var(--muted)">${e.notes}</span>`:''}</td>
+      <td class="rc">${days} day${days!==1?'s':''}</td>
+      <td class="rc">${syncDot(e.synced)}</td>
+      <td><button class="del-btn" data-id="${e.id}">×</button></td>
+    </tr>`;
+  });
+  body.innerHTML = html;
+  attachDeletes(body, 'perdiem');
+}
+
+function renderMileage() {
+  renderYearPills('miYears', 'mileage');
+  ensureCurYear('mileage');
+  const items = store.mileage.filter(e => e.date && e.date.startsWith(String(curYear.mileage))).sort((a,b)=>a.date.localeCompare(b.date));
+  const totalMi = items.reduce((s,e)=>s+e.miles, 0);
+
+  document.getElementById('miBar').innerHTML = `
+    <div class="stat"><div class="lbl">Total Miles ${curYear.mileage}</div><div class="val">${totalMi.toFixed(1)}</div></div>
+    <div class="stat"><div class="lbl">IRS Rate</div><div class="val">$${RATE.toFixed(2)}/mi</div></div>
+    <div class="stat"><div class="lbl">Est. Deduction</div><div class="val green">${fmt(totalMi*RATE)}</div></div>`;
+
+  const body = document.getElementById('miBody');
+  const empty = document.getElementById('miEmpty');
+  if (!items.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  let lastM='', html='';
+  items.forEach(e => {
+    const mk = monthKey(e.date);
+    if (mk !== lastM) { html += `<tr class="month-hdr"><td colspan="6">${monthLabel(e.date)}</td></tr>`; lastM=mk; }
+    html += `<tr>
+      <td>${shortDate(e.date)}</td>
+      <td>${e.desc}${e.shared?'<span class="badge-shared">Shared</span>':''}</td>
+      <td class="rc">${e.miles.toFixed(1)} mi</td>
+      <td class="rc">${fmt(e.miles*RATE)}</td>
+      <td class="rc">${syncDot(e.synced)}</td>
+      <td><button class="del-btn" data-id="${e.id}">×</button></td>
+    </tr>`;
+  });
+  body.innerHTML = html;
+  attachDeletes(body, 'mileage');
+}
+
+function renderDashboard() {
+  // Use whichever year tab is active, defaulting to current year
+  const y = curYear[activeSection] || thisYear();
+  const expTotal = store.expenses.filter(e=>e.date&&e.date.startsWith(String(y))).reduce((s,e)=>s+e.amount,0);
+  const miItems = store.mileage.filter(e=>e.date&&e.date.startsWith(String(y)));
+  const miTotal = miItems.reduce((s,e)=>s+e.miles,0);
+  const miDeduction = miTotal * RATE;
+  const pdDays = store.perdiem.filter(e=>e.start&&e.start.startsWith(String(y))).reduce((s,e)=>s+daysBetween(e.start,e.end),0);
+  const grandTotal = expTotal + miDeduction;
+
+  document.getElementById('dashYear').textContent = y;
+  document.getElementById('dashTotal').textContent = fmt(grandTotal);
+  document.getElementById('dashExp').textContent = fmt(expTotal);
+  document.getElementById('dashMi').textContent = fmt(miDeduction);
+  document.getElementById('dashDays').textContent = pdDays;
+  document.getElementById('dashMiles').textContent = miTotal.toFixed(1);
+
+  // Entry count
+  const expCount = store.expenses.filter(e=>e.date&&e.date.startsWith(String(y))).length;
+  const miCount = miItems.length;
+  const pdCount = store.perdiem.filter(e=>e.start&&e.start.startsWith(String(y))).length;
+  document.getElementById('dashSub').textContent = `${expCount} expense${expCount!==1?'s':''} · ${miCount} mileage entr${miCount!==1?'ies':'y'} · ${pdCount} trip${pdCount!==1?'s':''}`;
+
+  // Year note
+  const notes = JSON.parse(localStorage.getItem('lll_yearnotes') || '{}');
+  const noteInput = document.getElementById('dashNote');
+  noteInput.value = notes[String(y)] || '';
+}
+
+// Save year note on input
+document.getElementById('dashNote').addEventListener('input', function() {
+  const y = curYear[activeSection] || thisYear();
+  const notes = JSON.parse(localStorage.getItem('lll_yearnotes') || '{}');
+  notes[String(y)] = this.value;
+  localStorage.setItem('lll_yearnotes', JSON.stringify(notes));
+});
+
+function render() { renderExpenses(); renderPerdiem(); renderMileage(); renderDashboard(); updateSyncStatus(); }
+
+// ════════════════════════════════════════════
+//  SYNC STATUS UI
+// ════════════════════════════════════════════
+function updateSyncStatus() {
+  ['exp','pd','mi'].forEach(prefix => {
+    const row = document.getElementById(prefix + 'SyncRow');
+    const msg = document.getElementById(prefix + 'SyncMsg');
+    if (!cfg.sheetId || !isSignedIn) {
+      row.className = 'sync-row idle';
+      msg.textContent = cfg.sheetId ? 'Sign in to sync' : 'Configure Sheets to enable sync';
+    } else {
+      row.className = 'sync-row ok';
+      msg.textContent = 'Connected — entries sync automatically';
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+//  GOOGLE SHEETS API
+// ════════════════════════════════════════════
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+
+function loadGoogleAPIs() {
+  if (!cfg.clientId) return;
+
+  // Load GAPI
+  const s1 = document.createElement('script');
+  s1.src = 'https://apis.google.com/js/api.js';
+  s1.onload = () => {
+    gapi.load('client', async () => {
+      await gapi.client.init({ discoveryDocs: [DISCOVERY] });
+      gapiReady = true;
+      maybeRestoreToken();
+    });
+  };
+  document.head.appendChild(s1);
+
+  // Load GIS
+  const s2 = document.createElement('script');
+  s2.src = 'https://accounts.google.com/gsi/client';
+  s2.onload = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cfg.clientId,
+      scope: SCOPES,
+      callback: (resp) => {
+        if (resp.error) { showToast('Auth error: ' + resp.error, 'err'); return; }
+        isSignedIn = true;
+        localStorage.setItem('lll_token_exp', Date.now() + (resp.expires_in * 1000));
+        updateAuthUI();
+        ensureSheetTabs().then(() => syncAll());
+      }
+    });
+    gisReady = true;
+  };
+  document.head.appendChild(s2);
+}
+
+function maybeRestoreToken() {
+  const exp = parseInt(localStorage.getItem('lll_token_exp') || '0');
+  if (Date.now() < exp - 60000) {
+    // Token likely still valid — try silent refresh
+    isSignedIn = true;
+    updateAuthUI();
+    ensureSheetTabs().then(() => syncAll());
+  }
+}
+
+function signIn() {
+  if (!cfg.clientId) { openSetup(); return; }
+  if (!gisReady || !gapiReady) { showToast('Google APIs still loading, try again in a moment.', 'err'); return; }
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function signOut() {
+  google.accounts.oauth2.revoke(gapi.client.getToken()?.access_token || '', () => {});
+  gapi.client.setToken(null);
+  localStorage.removeItem('lll_token_exp');
+  isSignedIn = false;
+  updateAuthUI();
+  render();
+}
+
+function updateAuthUI() {
+  const status = document.getElementById('authStatus');
+  const signInBtn = document.getElementById('signInBtn');
+  const signOutBtn = document.getElementById('signOutBtn');
+  const banner = document.getElementById('setupBanner');
+  const sheetBar = document.getElementById('sheetBar');
+
+  if (isSignedIn && cfg.clientId) {
+    status.className = 'auth-status signed-in';
+    status.textContent = cfg.sheetId ? '✓ Syncing to Sheets' : '✓ Signed in — add Sheet ID';
+    signInBtn.style.display = 'none';
+    signOutBtn.style.display = '';
+    banner.style.display = 'none';
+    sheetBar.style.display = '';
+    document.getElementById('sheetIdInput').value = cfg.sheetId || '';
+  } else if (cfg.clientId) {
+    status.className = 'auth-status signed-out';
+    status.textContent = 'Sign in to sync';
+    signInBtn.style.display = '';
+    signOutBtn.style.display = 'none';
+    banner.style.display = 'none';
+    sheetBar.style.display = 'none';
+  } else {
+    status.className = 'auth-status signed-out';
+    status.textContent = 'Not connected to Sheets';
+    signInBtn.style.display = 'none';
+    signOutBtn.style.display = 'none';
+    banner.style.display = '';
+    sheetBar.style.display = 'none';
+  }
+  render();
+}
+
+// ════════════════════════════════════════════
+//  SHEETS: ENSURE TABS
+// ════════════════════════════════════════════
+async function ensureSheetTabs() {
+  if (!cfg.sheetId || !gapiReady) return;
+  try {
+    const res = await gapi.client.sheets.spreadsheets.get({ spreadsheetId: cfg.sheetId });
+    const existing = res.result.sheets.map(s => s.properties.title);
+    const needed = ['Expenses','PerDiem','Mileage'];
+    const toAdd = needed.filter(n => !existing.includes(n));
+    if (!toAdd.length) return;
+
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: cfg.sheetId,
+      resource: { requests: toAdd.map(title => ({ addSheet: { properties: { title } } })) }
+    });
+
+    // Add headers
+    const headers = {
+      Expenses: [['ID','Date','Description','Category','Amount','Notes','Shared']],
+      PerDiem: [['ID','Start Date','End Date','City','Purpose','Days','Notes','Shared']],
+      Mileage: [['ID','Date','Purpose/Route','Miles','Deduction','Shared']]
+    };
+    for (const tab of toAdd) {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: cfg.sheetId,
+        range: `${tab}!A1`,
+        valueInputOption: 'RAW',
+        resource: { values: headers[tab] }
+      });
+    }
+    showToast('Spreadsheet tabs created!');
+  } catch(e) {
+    showToast('Sheet error: ' + (e.result?.error?.message || e.message || 'unknown'), 'err');
+  }
+}
+
+// ════════════════════════════════════════════
+//  SHEETS: APPEND ROW
+// ════════════════════════════════════════════
+async function appendToSheet(tab, values) {
+  if (!cfg.sheetId || !isSignedIn || !gapiReady) return false;
+  try {
+    await gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId: cfg.sheetId,
+      range: `${tab}!A2`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      resource: { values: [values] }
+    });
+    return true;
+  } catch(e) {
+    showToast('Sync failed: ' + (e.result?.error?.message || 'error'), 'err');
+    return false;
+  }
+}
+
+async function syncAll() {
+  if (!cfg.sheetId || !isSignedIn) return;
+  let count = 0;
+
+  // Sync unsynced expenses
+  for (const e of store.expenses) {
+    if (e.synced) continue;
+    const ok = await appendToSheet('Expenses', [e.id, e.date, e.desc, e.category, e.amount, e.notes||'']);
+    if (ok) { e.synced = true; count++; }
+  }
+  // Sync unsynced perdiem
+  for (const e of store.perdiem) {
+    if (e.synced) continue;
+    const ok = await appendToSheet('PerDiem', [e.id, e.start, e.end, e.city, e.purpose, daysBetween(e.start,e.end), e.notes||'']);
+    if (ok) { e.synced = true; count++; }
+  }
+  // Sync unsynced mileage
+  for (const e of store.mileage) {
+    if (e.synced) continue;
+    const ok = await appendToSheet('Mileage', [e.id, e.date, e.desc, e.miles, (e.miles*RATE).toFixed(2)]);
+    if (ok) { e.synced = true; count++; }
+  }
+
+  if (count > 0) { saveLocal(); render(); showToast(`${count} entr${count===1?'y':'ies'} synced to Sheets`); }
+}
+
+// ════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════
+function saveClientId() {
+  const val = document.getElementById('clientIdInput').value.trim();
+  if (!val) return;
+  cfg.clientId = val;
+  saveCfg();
+  showToast('Client ID saved. Now sign in.');
+  closeModal('setupModal');
+  loadGoogleAPIs();
+  updateAuthUI();
+}
+
+function saveSheetId() {
+  const val = document.getElementById('sheetIdInput').value.trim();
+  if (!val) return;
+  // Extract ID if full URL pasted
+  const match = val.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  cfg.sheetId = match ? match[1] : val;
+  saveCfg();
+  document.getElementById('sheetIdInput').value = cfg.sheetId;
+  showToast('Sheet ID saved!');
+  updateAuthUI();
+  ensureSheetTabs().then(() => syncAll());
+}
+
+function openInSheets() {
+  if (cfg.sheetId) window.open(`https://docs.google.com/spreadsheets/d/${cfg.sheetId}/edit`, '_blank');
+}
+
+function openSetup() { openModal('setupModal'); }
+
+// ════════════════════════════════════════════
+//  SECTION TABS
+// ════════════════════════════════════════════
+document.querySelectorAll('.section-tab').forEach(btn => btn.addEventListener('click', () => {
+  activeSection = btn.dataset.section;
+  document.querySelectorAll('.section-tab').forEach(b => b.classList.toggle('active', b===btn));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id==='panel-'+activeSection));
+}));
+
+// ════════════════════════════════════════════
+//  MODALS
+// ════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+document.querySelectorAll('.modal-overlay').forEach(ov => ov.addEventListener('click', e => { if(e.target===ov) ov.classList.remove('open'); }));
+
+// ════════════════════════════════════════════
+//  ADD BUTTONS
+// ════════════════════════════════════════════
+document.getElementById('addExpBtn').addEventListener('click', () => { document.getElementById('eDate').value=today(); openModal('expModal'); });
+document.getElementById('addPdBtn').addEventListener('click', () => { document.getElementById('pdStart').value=today(); document.getElementById('pdEnd').value=today(); openModal('pdModal'); });
+document.getElementById('addMiBtn').addEventListener('click', () => { document.getElementById('mDate').value=today(); openModal('miModal'); });
+document.getElementById('setupBtn').addEventListener('click', openSetup);
+document.getElementById('signInBtn').addEventListener('click', signIn);
+document.getElementById('signOutBtn').addEventListener('click', signOut);
+
+// ════════════════════════════════════════════
+//  SAVE HANDLERS
+// ════════════════════════════════════════════
+document.getElementById('saveExp').addEventListener('click', async () => {
+  const date=document.getElementById('eDate').value;
+  const desc=document.getElementById('eDesc').value.trim();
+  const category=document.getElementById('eCat').value;
+  const amount=parseFloat(document.getElementById('eAmt').value)||0;
+  const notes=document.getElementById('eNotes').value.trim();
+  if(!date||!desc||amount<=0){alert('Please fill in date, description, and a valid amount.');return;}
+  const shared=document.getElementById('eShared').checked;
+  const entry = {id:uid(),date,desc,category,amount,notes,shared,synced:false};
+  store.expenses.push(entry);
+  saveLocal();
+  ['eDesc','eNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eAmt').value='';
+  document.getElementById('eShared').checked=false;
+  closeModal('expModal'); render();
+  curYear.expenses = parseInt(date.slice(0,4));
+  render();
+  if(isSignedIn && cfg.sheetId) {
+    const ok = await appendToSheet('Expenses',[entry.id,entry.date,entry.desc,entry.category,entry.amount,entry.notes,entry.shared?'Shared':'']);
+    if(ok){entry.synced=true;saveLocal();render();showToast('Saved & synced');}
+  }
+});
+
+document.getElementById('savePd').addEventListener('click', async () => {
+  const start=document.getElementById('pdStart').value;
+  const end=document.getElementById('pdEnd').value;
+  const city=document.getElementById('pdCity').value.trim();
+  const purpose=document.getElementById('pdPurpose').value.trim();
+  const notes=document.getElementById('pdNotes').value.trim();
+  if(!start||!end||!city||!purpose){alert('Please fill in all required fields.');return;}
+  if(end<start){alert('End date must be on or after start date.');return;}
+  const shared=document.getElementById('pdShared').checked;
+  const entry = {id:uid(),start,end,city,purpose,notes,shared,synced:false};
+  store.perdiem.push(entry);
+  saveLocal();
+  ['pdCity','pdPurpose','pdNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pdShared').checked=false;
+  closeModal('pdModal');
+  curYear.perdiem = parseInt(start.slice(0,4));
+  render();
+  if(isSignedIn && cfg.sheetId) {
+    const ok = await appendToSheet('PerDiem',[entry.id,entry.start,entry.end,entry.city,entry.purpose,daysBetween(entry.start,entry.end),entry.notes,entry.shared?'Shared':'']);
+    if(ok){entry.synced=true;saveLocal();render();showToast('Saved & synced');}
+  }
+});
+
+document.getElementById('saveMi').addEventListener('click', async () => {
+  const date=document.getElementById('mDate').value;
+  const desc=document.getElementById('mDesc').value.trim();
+  const miles=parseFloat(document.getElementById('mMiles').value)||0;
+  if(!date||!desc||miles<=0){alert('Please fill in all fields.');return;}
+  const shared=document.getElementById('miShared').checked;
+  const entry = {id:uid(),date,desc,miles,shared,synced:false};
+  store.mileage.push(entry);
+  saveLocal();
+  document.getElementById('mDesc').value='';
+  document.getElementById('mMiles').value='';
+  document.getElementById('miShared').checked=false;
+  closeModal('miModal');
+  curYear.mileage = parseInt(date.slice(0,4));
+  render();
+  if(isSignedIn && cfg.sheetId) {
+    const ok = await appendToSheet('Mileage',[entry.id,entry.date,entry.desc,entry.miles,(entry.miles*RATE).toFixed(2),entry.shared?'Shared':'']);
+    if(ok){entry.synced=true;saveLocal();render();showToast('Saved & synced');}
+  }
+});
+
+// ════════════════════════════════════════════
+//  CSV EXPORT
+// ════════════════════════════════════════════
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const section = activeSection;
+  ensureCurYear(section);
+  const y = curYear[section];
+  let csv='';
+
+  if(section==='expenses'){
+    csv='Date,Description,Category,Amount,Notes,Shared\n';
+    store.expenses.filter(e=>e.date&&e.date.startsWith(String(y))).sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+      csv+=`"${e.date}","${(e.desc||'').replace(/"/g,'""')}","${e.category}","${e.amount.toFixed(2)}","${(e.notes||'').replace(/"/g,'""')}","${e.shared?'Shared':''}"\n`;
+    });
+  } else if(section==='perdiem'){
+    csv='Start Date,End Date,City,Purpose,Days,Notes,Shared\n';
+    store.perdiem.filter(e=>e.start&&e.start.startsWith(String(y))).sort((a,b)=>a.start.localeCompare(b.start)).forEach(e=>{
+      csv+=`"${e.start}","${e.end}","${(e.city||'').replace(/"/g,'""')}","${(e.purpose||'').replace(/"/g,'""')}","${daysBetween(e.start,e.end)}","${(e.notes||'').replace(/"/g,'""')}","${e.shared?'Shared':''}"\n`;
+    });
+  } else {
+    csv='Date,Purpose/Route,Miles,Deduction,Shared\n';
+    store.mileage.filter(e=>e.date&&e.date.startsWith(String(y))).sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+      csv+=`"${e.date}","${(e.desc||'').replace(/"/g,'""')}","${e.miles.toFixed(1)}","${(e.miles*RATE).toFixed(2)}","${e.shared?'Shared':''}"\n`;
+    });
+  }
+
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`lll_${section}_${y}.csv`; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+if (cfg.clientId) loadGoogleAPIs();
+updateAuthUI();
+render();
+</script>
+</body>
+</html>
